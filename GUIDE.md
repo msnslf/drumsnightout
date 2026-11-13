@@ -20,7 +20,7 @@ A map of where things live. For running the game and the keys, see `README.md`.
 - **Everything visible is drawn from `(beat, phase, layout state)` every frame.** Nothing musical has its own timer.
 - **MidiMusic** plays your MIDI clips half a bar at a time, following the phase; **Music** plays SFX; **Mixer** routes it all.
 
-Scenes: `title` → PLAY → `comic` → `game` (game over and REPLAY happen inside it). SETTINGS is a panel in the title and in the pause menu (`PauseMenu`, shared by comic and game). `calibrate` is reached from settings → difficulty (from the pause menu this ends the game) and returns to the title's difficulty page. Esc / QUIT go back to the title.
+Scenes: `title` → PLAY → `calibrate` (first PLAY of a visit only, with SKIP; `Settings.calibrated`) → `comic` → `game` (game over and REPLAY happen inside it). SETTINGS is a panel in the title and in the pause menu (`PauseMenu`, shared by comic and game). `calibrate` is also reached from settings → difficulty (from the pause menu this ends the game) and returns to the title's difficulty page. On the first PLAY it plays the intro music instead of the metronome, which carries on into the comic. It ends on CONTINUE / RECALIBRATE; `enter({ then })` sets where CONTINUE, SKIP or Esc go. Esc / QUIT go back to the title.
 
 ## 2. Loading
 

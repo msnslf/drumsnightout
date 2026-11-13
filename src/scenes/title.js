@@ -8,7 +8,7 @@ class TitleScene {
     title.anchor.set(0.5);
     title.position.set(CONFIG.WIDTH / 2, 190);
     this.menu = new Menu([
-      { label: "PLAY", onSelect: () => Scenes.go("comic") },
+      { label: "PLAY", onSelect: () => (Settings.calibrated ? Scenes.go("comic") : Scenes.go("calibrate", { then: "comic" })) },
       { label: "SETTINGS", onSelect: () => this.showSettings("main") },
     ], { y: 400, gap: 85, size: 48 });
     this.main.addChild(this.menu.view);

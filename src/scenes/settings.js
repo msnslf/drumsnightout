@@ -6,6 +6,7 @@ const Settings = {
   volume: { music: 1, sfx: 1 }, // slider positions 0..1, applied by Mixer.setVolume
   keys: [...CONFIG.LANE_KEYS], // dance key per lane, lowercase
   inputOffsetMs: CONFIG.INPUT_OFFSET_MS, // calibration, added to key times
+  calibrated: false, // set once calibration has been run (or skipped) this visit
   touch: matchMedia("(pointer: coarse)").matches, // touch screen, decided at load: tap the circles to dance
 
   setVolume(group, v) {

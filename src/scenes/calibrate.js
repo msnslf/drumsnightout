@@ -21,22 +21,41 @@ class CalibrateScene {
     this.hint = makeText("", 20, "normal", center);
     this.hint.anchor.set(0.5, 0);
     this.hint.position.set(CONFIG.WIDTH / 2, 20);
+    const warn = makeText("bluetooth audio strongly discouraged (latency)", 18, "bold", center);
+    warn.position.set(16, 52);
     this.big = makeText("", 64, "900", center);
     this.big.anchor.set(0.5);
     this.big.position.set(CONFIG.WIDTH / 2, Layout.countY);
     this.progress = makeText("", 24, "bold", center);
     this.progress.anchor.set(0.5);
     this.progress.position.set(CONFIG.WIDTH / 2, Layout.drums.floorY + 34);
-    const back = makeButton("BACK", () => this._back());
-    back.position.set(CONFIG.WIDTH - 20 - back.width, 14);
-    this.view.addChild(this.title, this.hint, this.big, this.progress, back);
+    this.result = makeText("", 40, "900", center);
+    this.result.anchor.set(0.5);
+    this.result.position.set(CONFIG.WIDTH / 2, 230);
+    this.detail = makeText("", 24, "bold", center);
+    this.detail.anchor.set(0.5);
+    this.detail.position.set(CONFIG.WIDTH / 2, 285);
+    this.menu = new Menu([
+      { label: "CONTINUE", onSelect: () => this._done() },
+      { label: "RECALIBRATE", onSelect: () => Scenes.go("calibrate", { then: this.then }) },
+    ], { y: 400 });
+    this.back = makeButton("BACK", () => this._done());
+    this.skip = makeButton("SKIP ▶▶", () => this._done(), true); // underlined S: the skip key
+    for (const b of [this.back, this.skip]) b.position.set(CONFIG.WIDTH - 20 - b.width, 14);
+    this.view.addChild(this.title, this.hint, warn, this.big, this.progress, this.result, this.detail, this.menu.view, this.back, this.skip);
   }
 
-  enter() {
+  // then: scene to go to when done (first PLAY: "comic"); else the title's difficulty page.
+  enter({ then }) {
+    Settings.calibrated = true;
+    this.then = then;
+    this.back.visible = !then;
+    this.skip.visible = !!then;
     this.arrowLayer.removeChildren().forEach((c) => c.destroy());
+    const leave = then ? "S or Esc to skip" : "Esc to cancel";
     this.hint.text = Settings.touch
-      ? `Tap on every beat, as each dot hits the line   •   BACK to cancel`
-      : `Tap any of ${Settings.keys.join(" ").toUpperCase()} on every beat, as each letter hits the line   •   Esc to cancel`;
+      ? `Tap on every beat, as each dot hits the line   •   ${then ? "SKIP to skip" : "BACK to cancel"}`
+      : `Tap any of ${Settings.keys.join(" ").toUpperCase()} on every beat, as each letter hits the line   •   ${leave}`;
     this.notes = [];
     for (let i = 0; i < CAL_NOTES; i++) {
       const lane = CAL_LANES[i % CAL_LANES.length];
@@ -45,48 +64,51 @@ class CalibrateScene {
       this.notes.push({ beat: CAL_COUNT_IN + i, lane, hit: false, view });
     }
     this.deltas = [];
-    this.doneAt = null;
+    this.finished = false;
+    this.result.text = this.detail.text = "";
+    this.menu.view.visible = false;
+    this.menu.choice = 0;
     this.staff.gfx.visible = this.arrowLayer.visible = true;
     this.staff.update(Layout.state({ name: "dance", progress: 0 }));
 
+    this.music = !!then && !!MidiMusic.clips.intro; // first PLAY: tap to the intro, not the metronome
+    const startAt = this.music && Clock.nextBar(); // continue the title's intro on its next downbeat
     Clock.reset(CONFIG.BPM);
-    Music.startMetronome(CAL_COUNT_IN);
-    Clock.start();
+    if (this.music) MidiMusic.start("intro");
+    else Music.startMetronome(CAL_COUNT_IN);
+    Clock.start(startAt || undefined);
   }
 
   exit() {
-    Clock.reset(CONFIG.BPM);
+    if (!this.music) Clock.reset(CONFIG.BPM); // the intro carries on into the comic
   }
 
   update() {
+    if (this.finished) return this.menu.update();
     const beat = Clock.beat();
     for (const n of this.notes) {
       n.view.visible = !n.hit && placeLetter(n.view, n.lane, n.beat - beat, 0);
     }
-
-    if (this.doneAt === null) {
-      if (beat < CAL_COUNT_IN) {
-        const k = Math.floor(beat);
-        this.big.text = String(k + 1);
-        this.big.scale.set(1 + 0.4 * (1 - (beat - k)));
-      } else {
-        this.big.text = "";
-      }
-      this.progress.text = `${this.deltas.length} / ${CAL_NOTES}`;
-      if (beat > CAL_COUNT_IN + CAL_NOTES) this._finish();
-    } else if (performance.now() - this.doneAt > 2800) {
-      this._back();
+    if (beat < CAL_COUNT_IN) {
+      const k = Math.floor(beat);
+      this.big.text = String(k + 1);
+      this.big.scale.set(1 + 0.4 * (1 - (beat - k)));
+    } else {
+      this.big.text = "";
     }
+    this.progress.text = `${this.deltas.length} / ${CAL_NOTES}`;
+    if (beat > CAL_COUNT_IN + CAL_NOTES) this._finish();
   }
 
   _finish() {
-    this.doneAt = performance.now();
-    Clock.reset(CONFIG.BPM); // stop the beat
+    this.finished = true;
+    if (!this.music) Clock.reset(CONFIG.BPM); // stop the metronome
     this.staff.gfx.visible = this.arrowLayer.visible = false; // clear the stage for the result
-    this.big.scale.set(1);
+    this.big.text = this.progress.text = "";
+    this.menu.view.visible = true;
     if (this.deltas.length < CAL_MIN_HITS) {
-      this.big.text = "Not enough taps — try again!";
-      this.progress.text = "offset unchanged";
+      this.result.text = "Not enough taps";
+      this.detail.text = "offset unchanged";
       return;
     }
     const sorted = this.deltas.slice().sort((a, b) => a - b);
@@ -94,24 +116,25 @@ class CalibrateScene {
     const median = sorted.length % 2 ? sorted[Math.floor(mid)] : (sorted[mid - 1] + sorted[mid]) / 2;
     const offset = -Math.round(median);
     Settings.inputOffsetMs = offset;
-    const late = median > 0;
-    this.big.text = `Offset: ${offset > 0 ? "+" : ""}${offset} ms`;
-    this.progress.text = `you were tapping ${Math.abs(Math.round(median))} ms ${late ? "late" : "early"} on average`;
+    this.result.text = `Offset: ${offset > 0 ? "+" : ""}${offset} ms`;
+    this.detail.text = `you were tapping ${Math.abs(Math.round(median))} ms ${median > 0 ? "late" : "early"} on average`;
   }
 
-  _back() {
-    Scenes.go("title", { page: "difficulty" });
+  _done() {
+    if (this.then) Scenes.go(this.then);
+    else Scenes.go("title", { page: "difficulty" });
   }
 
   onKey(e) {
-    if (e.key === "Escape") return this._back();
-    if (this.doneAt !== null) return;
-    if (Settings.keys.includes(e.key.toLowerCase()) || e.key === " ") this._tap(e);
+    const key = e.key.toLowerCase();
+    if (e.key === "Escape" || (this.then && key === "s" && !Settings.keys.includes("s"))) return this._done();
+    if (this.finished) return this.menu.onKey(e);
+    if (Settings.keys.includes(key) || e.key === " ") this._tap(e);
   }
 
   // Touch: a tap anywhere counts (menu and buttons are Pixi's).
   onTap(e) {
-    if (this.doneAt === null) this._tap(e);
+    if (!this.finished) this._tap(e);
   }
 
   _tap(e) {
