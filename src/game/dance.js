@@ -21,8 +21,8 @@ function markHoldStarts(notes) {
   for (const n of [...notes].sort((a, b) => a.beat - b.beat)) {
     const p = prev[n.lane];
     if (p && n.beat - p.beat <= 0.5 + 1e-6) {
-      if (!p.inRun) p.holdStart = true;
-      p.inRun = n.inRun = true;
+      if (!p.run) (p.holdStart = true), (p.run = p);
+      n.run = p.run; // the run's first note
     }
     prev[n.lane] = n;
   }
@@ -154,12 +154,19 @@ class DanceMode {
     // Early hits sound exactly on the note; late or stray ones sound now.
     const early = best && best.beat > beat ? Clock.beatsToMs(best.beat - beat) / 1000 : 0;
     MidiMusic.playLane(lane, Tone.immediate() + early, best?.velocity);
-    this.held[lane] = !!best;
+    this.held[lane] = !!best || this._insideRun(lane, beat, phase);
     if (!best) return; // stray press: no penalty for now (TBD)
     best.state = "hit";
     this.drums[lane].dance();
     const deltaMs = Clock.beatsToMs(beat - best.beat);
     this._judge(best, Math.abs(deltaMs) < this.windowMs * 0.4 ? "perfect" : "good", beat);
+  }
+
+  // True if `beat` is mid-run with notes still to come, so a hold continues.
+  _insideRun(lane, beat, phase) {
+    return this._activeCycles(phase).some((c) =>
+      this.chart(c).some((n) => n.lane === lane && n.state === "pending" && n.run && n.run !== n && n.run.beat < beat && n.beat > beat)
+    );
   }
 
   release(lane) {
