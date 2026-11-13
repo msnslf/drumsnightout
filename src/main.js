@@ -60,13 +60,13 @@ async function main() {
   };
   Input.init();
 
-  const sheet = await PIXI.Assets.load("assets/drums/drum0.json");
-  const sheets = {
-    1: await PIXI.Assets.load("assets/drums/drum1.json"),
-    2: await PIXI.Assets.load("assets/drums/drum2.json"),
-    3: await PIXI.Assets.load("assets/drums/drum3.json"),
-  };
-  Scenes.list.game.drums.forEach((drum, i) => drum.useSpritesheet(sheets[i] ?? sheet));
+  const atlas = await (await fetch("assets/drums/drum.json")).json(); // shared by every drum's PNG
+  for (const [i, drum] of Scenes.list.game.drums.entries()) {
+    const texture = await PIXI.Assets.load(`assets/drums/drum${i}.png`);
+    const sheet = new PIXI.Spritesheet({ texture, data: atlas, cachePrefix: `drum${i}:` });
+    await sheet.parse();
+    drum.useSpritesheet(sheet);
+  }
 
   try {
     Scenes.list.game.bowling.useSpritesheet(await PIXI.Assets.load("assets/pins/pin.json"));

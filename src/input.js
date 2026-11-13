@@ -9,7 +9,7 @@ const Input = {
 
       // [ and ] nudge the calibration offset everywhere.
       if (e.key === "[" || e.key === "]") {
-        Clock.setInputOffset(Clock.inputOffsetMs + (e.key === "[" ? -5 : 5));
+        Settings.inputOffsetMs += e.key === "[" ? -5 : 5;
         return;
       }
       Scenes.current.onKey(e, Clock.beatOfEvent(e));

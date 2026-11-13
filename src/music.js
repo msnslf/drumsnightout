@@ -11,7 +11,7 @@ const Music = {
     this.click = new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.001, decay: 0.05, sustain: 0 } }).connect(sfx);
     this.click.volume.value = -14;
 
-    this.stickHits = [0, 1, 2, 3].map((i) => new Tone.Player({ url: `assets/sfx/stickgod-drum${i}.wav`, volume: -6 }).connect(sfx));
+    this.stickHits = [0, 1, 2, 3].map((i) => new Tone.Player({ url: `assets/sfx/stickgod-drum${i}.wav`, volume: -12 }).connect(sfx));
     this.revCym = new Tone.Player("assets/music/samples/revcym.wav").connect(Mixer.in.nodrums);
     this.revCym.volume.value = -12;
     this._initCues(sfx, Mixer.in.banter);
@@ -57,8 +57,6 @@ const Music = {
       s.volume.value = db;
       return s;
     };
-    // Tone clamps late starts to now and can't restart at once: keep increasing.
-    const after = (s, time) => (s._last = Math.max(time, s.context.currentTime, (s._last ?? 0) + 0.001));
     // `randomizeRange: [lo, hi]` shifts each trigger by random whole semitones.
     const pitch = (note, range) => {
       if (!range) return note;
@@ -67,11 +65,11 @@ const Music = {
     };
     const pop = (note, decay, out = sfx, db = -6, { randomizeRange } = {}) => {
       const s = make(Tone.MembraneSynth, { pitchDecay: 0.01, octaves: 4, envelope: { attack: 0.001, decay, sustain: 0 } }, out, db);
-      return (time) => s.triggerAttackRelease(pitch(note, randomizeRange), "32n", after(s, time));
+      return (time) => s.triggerAttackRelease(pitch(note, randomizeRange), "32n", nextStart(s, time));
     };
     const click = (note, db, { randomizeRange } = {}) => {
       const s = make(Tone.Synth, { oscillator: { type: "square" }, envelope: { attack: 0.001, decay: 0.03, sustain: 0 } }, sfx, db);
-      return (time) => s.triggerAttackRelease(pitch(note, randomizeRange), 0.01, after(s, time));
+      return (time) => s.triggerAttackRelease(pitch(note, randomizeRange), 0.01, nextStart(s, time));
     };
     // Each sample play gets its own player, so overlaps aren't cut.
     const play = (buf, out, time) => {

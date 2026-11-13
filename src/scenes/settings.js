@@ -1,49 +1,25 @@
-// Player settings (saved in this browser) and the menu pages that edit them.
+// Player settings (kept until the page reloads) and the menu pages for them.
 
 const Settings = {
   difficulty: 1, // index into CONFIG.DIFFICULTIES
   bpm: CONFIG.BPM, // starting tempo
   volume: { music: 1, sfx: 1 }, // slider positions 0..1, applied by Mixer.setVolume
   keys: [...CONFIG.LANE_KEYS], // dance key per lane, lowercase
+  inputOffsetMs: CONFIG.INPUT_OFFSET_MS, // calibration, added to key times
 
-  load() {
-    try {
-      const s = JSON.parse(localStorage.getItem("pizzajam.settings")) || {};
-      if (CONFIG.DIFFICULTIES[s.difficulty]) this.difficulty = s.difficulty;
-      if (s.bpm >= CONFIG.START_BPM_MIN && s.bpm <= CONFIG.START_BPM_MAX) this.bpm = s.bpm;
-      for (const k in this.volume) if (Number.isFinite(s.volume?.[k])) this.volume[k] = s.volume[k];
-      if (s.keys?.length === this.keys.length && s.keys.every(this.bindable)) this.keys = s.keys;
-    } catch (e) {}
-  },
-  save() {
-    try {
-      localStorage.setItem("pizzajam.settings", JSON.stringify({ difficulty: this.difficulty, bpm: this.bpm, volume: this.volume, keys: this.keys }));
-    } catch (e) {}
-  },
-  setDifficulty(i) {
-    this.difficulty = i;
-    this.save();
-  },
-  setBpm(bpm) {
-    this.bpm = bpm;
-    this.save();
-  },
   setVolume(group, v) {
     this.volume[group] = v;
     Mixer.setVolume(group, v);
-    this.save();
   },
-  // Single printable keys, except space and the keys taken by pause and debug.
+  // Single printable keys, except space, P (pause) and [ ] (calibration nudge).
   bindable: (key) => typeof key === "string" && key.length === 1 && !" p[]".includes(key),
   // Binds a lane; a lane already using that key gets this lane's old key.
   setKey(lane, key) {
     const other = this.keys.indexOf(key);
     if (other >= 0) this.keys[other] = this.keys[lane];
     this.keys[lane] = key;
-    this.save();
   },
 };
-Settings.load();
 
 // Loops a preview while a volume slider is selected (music or sfx).
 const AudioPreview = {
@@ -69,7 +45,7 @@ class SettingsPanel {
   constructor({ onBack }) {
     this.view = new PIXI.Container();
     this.onBack = onBack;
-    this.heading = this.view.addChild(new PIXI.Text({ text: "", style: { fontFamily: CONFIG.FONT, fontSize: 56, fontWeight: "900", fill: CONFIG.INK } }));
+    this.heading = this.view.addChild(makeText("", 56, "900"));
     this.heading.anchor.set(0.5);
     this.heading.position.set(CONFIG.WIDTH / 2, 140);
 
@@ -77,7 +53,7 @@ class SettingsPanel {
     const levels = CONFIG.DIFFICULTIES.map((d, i) => ({
       label: () => `${d.name}   (±${d.windowMs} ms)${i === Settings.difficulty ? "  ●" : ""}`,
       onSelect: () => {
-        Settings.setDifficulty(i);
+        Settings.difficulty = i;
         this.show("main");
       },
     }));
@@ -85,10 +61,10 @@ class SettingsPanel {
     levels.push({
       label: () => `TEMPO   ${Settings.bpm} BPM`,
       get: () => (Settings.bpm - lo) / (hi - lo),
-      set: (v) => Settings.setBpm(Math.round(lo + v * (hi - lo))),
+      set: (v) => (Settings.bpm = Math.round(lo + v * (hi - lo))),
       step: 5 / (hi - lo), // ← → move 5 bpm
     });
-    const offset = () => Math.round(Clock.inputOffsetMs);
+    const offset = () => Math.round(Settings.inputOffsetMs);
     levels.push({ label: () => `CALIBRATE   (offset ${offset() > 0 ? "+" : ""}${offset()} ms)`, onSelect: () => Scenes.go("calibrate") });
     const controls = Settings.keys.map((_, lane) => ({
       label: () => `LANE ${lane + 1}   ${this.binding === lane ? "press a key…" : Settings.keys[lane].toUpperCase()}`,

@@ -30,14 +30,14 @@ function markHoldStarts(notes) {
 
 // "(hold)" label shown just left of a run's first letter.
 function makeHoldLabel() {
-  const t = new PIXI.Text({ text: "(hold)", style: { fontFamily: CONFIG.FONT, fontSize: 16 * CONFIG.HIT_CUE_SCALE, fontWeight: "bold", fill: CONFIG.INK } });
+  const t = makeText("(hold)", 16 * CONFIG.HIT_CUE_SCALE);
   t.anchor.set(1, 0.5);
   return t;
 }
 
 // The lane's key letter, drawn at hit-line size so shrinking keeps it sharp.
 function makeLetter(lane) {
-  const t = new PIXI.Text({ text: Settings.keys[lane].toUpperCase(), style: { fontFamily: CONFIG.FONT, fontSize: 34 * CONFIG.HIT_CUE_SCALE, fontWeight: "900", fill: CONFIG.INK } });
+  const t = makeText(Settings.keys[lane].toUpperCase(), 34 * CONFIG.HIT_CUE_SCALE, "900");
   t.anchor.set(0.5);
   return t;
 }
@@ -59,12 +59,11 @@ class DanceMode {
   constructor(drums) {
     this.drums = drums;
     this.view = new PIXI.Container();
-    this.view.mask = this.view.addChild(Layout.danceClip());
+    this.view.mask = this.view.addChild(Layout.clip(Layout.danceTop.y));
     this.charts = new Map(); // cycle -> notes
-    this.windowMs = 90;
 
     this.judges = [0, 1, 2, 3].map((lane) => {
-      const text = new PIXI.Text({ text: "", style: { fontFamily: CONFIG.FONT, fontSize: Layout.hitRadius * 0.26, fontWeight: "bold", fill: CONFIG.INK, align: "center" } });
+      const text = makeText("", Layout.hitRadius * 0.26, "bold", { align: "center" });
       text.anchor.set(0.5);
       text.position.set(Layout.drumX(lane), Layout.hitY); // inside the hit circle
       this.view.addChild(text);
@@ -80,7 +79,7 @@ class DanceMode {
 
   reset(windowMs) {
     this.windowMs = windowMs;
-    for (const notes of this.charts.values()) for (const n of notes) n.view?.destroy(), n.holdView?.destroy();
+    for (const notes of this.charts.values()) this._free(notes);
     this.charts.clear();
     for (const j of this.judges) j.beat = j.until = -Infinity;
     this.held.fill(false);
@@ -106,7 +105,7 @@ class DanceMode {
     // Free charts we're done with.
     for (const [c, notes] of this.charts) {
       if (c < cycle) {
-        for (const n of notes) n.view.destroy(), n.holdView?.destroy();
+        this._free(notes);
         this.charts.delete(c);
       }
     }
@@ -169,6 +168,10 @@ class DanceMode {
     );
   }
 
+  _free(notes) {
+    for (const n of notes) n.view?.destroy(), n.holdView?.destroy();
+  }
+
   release(lane) {
     this.held[lane] = false;
   }
@@ -190,7 +193,7 @@ class DanceMode {
 
   // Sits left of its letter, fading out between the 2 and 1.5 beat markers.
   _placeHold(n, show, ahead, t) {
-    const fade = Math.min(1, Math.max(0, (ahead - 1.5) / 0.5));
+    const fade = clamp01((ahead - 1.5) / 0.5);
     n.holdView.visible = show && fade > 0;
     if (!n.holdView.visible) return;
     n.holdView.position.set(n.view.x - n.view.width / 2 - 4 * n.view.scale.x, n.view.y);

@@ -3,7 +3,6 @@
 const Clock = {
   ctx: null, // native AudioContext
   transport: null,
-  inputOffsetMs: CONFIG.INPUT_OFFSET_MS,
   paused: false,
   running: false, // started since the last reset
   _lastBeat: 0,
@@ -14,7 +13,6 @@ const Clock = {
     Tone.setContext(this.ctx);
     this.transport = Tone.getTransport();
     this.transport.timeSignature = CONFIG.BEATS_PER_BAR;
-    this.loadInputOffset();
   },
 
   // Must be called from a user gesture (browser autoplay rules).
@@ -64,27 +62,9 @@ const Clock = {
     return this._lastBeat;
   },
 
-  // Song position of a key/pointer event, with calibration applied.
-  beatOfEvent(e) {
-    return this.beatAtTime(this.audibleTimeAt(e.timeStamp + this.inputOffsetMs));
-  },
-  // Same, without calibration (used by the calibration screen itself).
-  rawBeatOfEvent(e) {
-    return this.beatAtTime(this.audibleTimeAt(e.timeStamp));
-  },
-
-  // Input calibration, remembered between sessions in this browser.
-  setInputOffset(ms) {
-    this.inputOffsetMs = ms;
-    try {
-      localStorage.setItem("pizzajam.inputOffsetMs", String(ms));
-    } catch (e) {}
-  },
-  loadInputOffset() {
-    try {
-      const v = parseFloat(localStorage.getItem("pizzajam.inputOffsetMs"));
-      if (Number.isFinite(v)) this.inputOffsetMs = v;
-    } catch (e) {}
+  // Song position of a key/pointer event, with the calibration offset applied.
+  beatOfEvent(e, offsetMs = Settings.inputOffsetMs) {
+    return this.beatAtTime(this.audibleTimeAt(e.timeStamp + offsetMs));
   },
 
   bpm() {
@@ -133,3 +113,9 @@ const Clock = {
     return this.transport.nextSubdivision((CONFIG.BEATS_PER_BAR / 2) * this.transport.PPQ + "i");
   },
 };
+
+// Start time for `holder` (a synth or voice): Tone throws on two starts at one
+// instant and clamps late times to now, so keep each holder's starts increasing.
+function nextStart(holder, time) {
+  return (holder._lastStart = Math.max(time, Tone.getContext().currentTime, (holder._lastStart ?? -1) + 0.001));
+}

@@ -24,9 +24,9 @@ const Layout = {
     const w = this.danceTopWidth, depth = (CONFIG.PATTERN_LOOKAHEAD_BEATS * w) / (1 - w);
     return ahead / (ahead + depth) / (1 - w);
   },
-  // Mask hiding letters above the dance lanes, so they slide in from the top.
-  danceClip() {
-    return new PIXI.Graphics().rect(0, this.danceTop.y, CONFIG.WIDTH, CONFIG.HEIGHT - this.danceTop.y).fill(CONFIG.INK);
+  // Mask hiding everything above `top`, so things slide in from there.
+  clip(top) {
+    return new PIXI.Graphics().rect(0, top, CONFIG.WIDTH, CONFIG.HEIGHT - top).fill(CONFIG.INK);
   },
   get countY() {
     return (this.danceTop.y + this.hitY) / 2;
@@ -36,7 +36,7 @@ const Layout = {
   state(phase) {
     const b = phase.progress * 4;
     const seg = (a, z) => ease((b - a) / (z - a));
-    const lin = (a, z) => Math.max(0, Math.min(1, (b - a) / (z - a)));
+    const lin = (a, z) => clamp01((b - a) / (z - a));
     switch (phase.name) {
       case "toBowl":
         return { spread: seg(0, 1.5), clef: lin(1.5, 3), bowlUI: seg(3, 4), title: lin(3, 4) };
@@ -62,13 +62,14 @@ const Layout = {
   lineBottom(i, spread) {
     return { x: this.lineX(i), y: lerp(this.hitY, this.lanes.bottom, spread) };
   },
+  // Point on line i, s of the way from its bottom (0) to its top (1).
+  linePoint(i, s, spread) {
+    const a = this.lineBottom(i, spread), b = this.lineTop(i, spread);
+    return { x: lerp(a.x, b.x, s), y: lerp(a.y, b.y, s) };
+  },
   // Centre of lane i, s of the way from its bottom (0) to its top (1).
   lanePoint(i, s, spread) {
-    const p = (k) => {
-      const a = this.lineBottom(k, spread), b = this.lineTop(k, spread);
-      return { x: lerp(a.x, b.x, s), y: lerp(a.y, b.y, s) };
-    };
-    const l = p(i), r = p(i + 1);
+    const l = this.linePoint(i, s, spread), r = this.linePoint(i + 1, s, spread);
     return { x: (l.x + r.x) / 2, y: (l.y + r.y) / 2 };
   },
   lane(i) {
@@ -104,7 +105,7 @@ const Layout = {
   // 0..1: how far the pin with this `order` has been deposited.
   pinDrop(order, st) {
     const legs = this.clefPath.length - 1;
-    return Math.max(0, Math.min(1, st.clef * legs - (order + 1)));
+    return clamp01(st.clef * legs - (order + 1));
   },
 };
 
@@ -137,10 +138,7 @@ class StaffView {
       // Faint guides 0.5, 1, 1.5 and 2 beats before the hit (halves dashed).
       for (const ahead of [0.5, 1, 1.5, 2]) {
         const s = Layout.beatS(ahead);
-        const at = (i) => {
-          const b = Layout.lineBottom(i, st.spread), t = Layout.lineTop(i, st.spread);
-          return { x: lerp(b.x, t.x, s), y: lerp(b.y, t.y, s) };
-        };
+        const at = (i) => Layout.linePoint(i, s, st.spread);
         const a = at(0), z = at(4), dashes = ahead % 1 ? 40 : 1;
         for (let k = 0; k < dashes; k++) {
           const t0 = k / dashes, t1 = dashes > 1 ? (k + 0.5) / dashes : 1;

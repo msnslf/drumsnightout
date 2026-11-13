@@ -170,6 +170,7 @@ class DrumStick {
     this.gfx.ellipse(0, -20, 30, 24)
       .fill(paper)
       .stroke({ width: 5, color: ink });
+    this.gfx.rotation = 0.15;
 
     this.reset();
   }
@@ -220,6 +221,5 @@ class DrumStick {
     }
 
     this.gfx.y = y;
-    this.gfx.rotation = 0.15;
   }
 }

@@ -4,7 +4,7 @@ class TitleScene {
   constructor() {
     this.view = new PIXI.Container();
     this.main = this.view.addChild(new PIXI.Container());
-    const title = this.main.addChild(new PIXI.Text({ text: "DRUMS' NIGHT OUT", style: { fontFamily: CONFIG.FONT, fontSize: 100, fontWeight: "900", fill: CONFIG.INK } }));
+    const title = this.main.addChild(makeText("DRUMS' NIGHT OUT", 100, "900"));
     title.anchor.set(0.5);
     title.position.set(CONFIG.WIDTH / 2, 190);
     this.menu = new Menu([
@@ -17,10 +17,7 @@ class TitleScene {
     this.view.addChild(this.settings.view);
 
     if (MidiMusic.needsServer) {
-      const note = this.view.addChild(new PIXI.Text({
-        text: "♪ Your MIDI music needs a local server to load (see README); no music for now.",
-        style: { fontFamily: CONFIG.FONT, fontSize: 18, fill: CONFIG.INK },
-      }));
+      const note = this.view.addChild(makeText("♪ Your MIDI music needs a local server to load (see README); no music for now.", 18, "normal"));
       note.anchor.set(0.5);
       note.position.set(CONFIG.WIDTH / 2, 680);
     }

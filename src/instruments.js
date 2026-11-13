@@ -9,13 +9,11 @@ const INSTRUMENTS = {
   bass: (out) => {
     const { filter, cc } = cutoffCC(out);
     const synth = new Tone.AMSynth({
-      detune: 0,
-      portamento: 0,
       harmonicity: 3.5,
-      oscillator: { type: "fatsawtooth", count: 3, spread: 48, phase: 0 },
-      envelope: { attack: 0.01, attackCurve: "linear", decay: 0.2, decayCurve: "exponential", sustain: 1, release: 0.05, releaseCurve: "exponential" },
-      modulation: { type: "square5", phase: 0 },
-      modulationEnvelope: { attack: 0.5, attackCurve: "linear", decay: 0.01, decayCurve: "exponential", sustain: 1, release: 0.5, releaseCurve: "exponential" },
+      oscillator: { type: "fatsawtooth", count: 3, spread: 48 },
+      envelope: { attack: 0.01, decay: 0.2, sustain: 1, release: 0.05 },
+      modulation: { type: "square5" },
+      modulationEnvelope: { attack: 0.5, decay: 0.01, sustain: 1, release: 0.5 },
     });
     return { ...melodic(synth, filter, -12, { mono: true }), cc };
   },
@@ -23,7 +21,7 @@ const INSTRUMENTS = {
   melody: (out) => {
     const { filter, cc } = cutoffCC(out);
     const synth = new Tone.MonoSynth({ 
-      oscillator: { type: "fatsawtooth", count: 3, spread: 48, phase: 0 }, 
+      oscillator: { type: "fatsawtooth", count: 3, spread: 48 },
       envelope: { attack: 0.01, decay: 0.01, sustain: 0.9, release: 0.5 },
       filter: {Q: 1, type: "lowpass", rolloff: -12},
       filterEnvelope: { attack: 0.001, decay: 0.5, release: 0.2, sustain: 0.1, baseFrequency: 3000, octaves: 2} 
@@ -60,13 +58,10 @@ const sendCC = (name, key) => (value, time) => Mixer.setSendCC(name, key, value,
 function melodic(synth, out, volumeDb, { mono = false } = {}) {
   synth.volume.value = volumeDb;
   synth.connect(out);
-  let last = -1;
   return {
     synth,
     play(midi, duration, time, velocity) {
-      // Mono synths can't start twice at one instant (Tone throws), so nudge.
-      if (mono) time = Math.max(time, synth.context.currentTime, last + 0.001);
-      last = time;
+      if (mono) time = nextStart(synth, time);
       synth.triggerAttackRelease(Tone.Frequency(midi, "midi").toFrequency(), duration, time, velocity);
     },
   };
@@ -103,7 +98,6 @@ class Kit {
     this.map = map;
     this.otherMap = otherMap;
     this.otherName = otherName;
-    this.last = {};
   }
 
   // Sets a voice's level, output and synth trigger args [note, duration].
@@ -121,14 +115,10 @@ class Kit {
     }
 
     const name = this.map[midi];
-    if (!name) return; // unmapped notes are ignored
-    time = Math.max(time, Tone.getContext().currentTime, (this.last[name] ?? -1) + 0.001); // late times get clamped to now
-    this.last[name] = time;
-
-    this.beforeHit?.(name, time);
-
     const s = this.voices[name];
-    if (!s) return;
+    if (!s) return; // unmapped notes are ignored
+    time = nextStart(s, time);
+    this.beforeHit?.(name, time);
 
     // 1. Sample playback
     if (s instanceof Tone.Player) {
@@ -150,10 +140,10 @@ class DrumKit extends Kit {
     const v = (node, db, trigger) => Kit.voice(node, db, out, trigger);
 
     this.voices = {
-      kick: v(new Tone.Player("../assets/music/samples/kick.wav"), -10, out),
-      snare: v(new Tone.Player("../assets/music/samples/snare.wav"), -10, out),
-      lowTom: v(new Tone.Player("../assets/music/samples/tomLow.wav"), -10, out),
-      highTom: v(new Tone.Player("../assets/music/samples/tomHigh.wav"), -10, out)
+      kick: v(new Tone.Player("assets/music/samples/kick.wav"), -10),
+      snare: v(new Tone.Player("assets/music/samples/snare.wav"), -10),
+      lowTom: v(new Tone.Player("assets/music/samples/tomLow.wav"), -10),
+      highTom: v(new Tone.Player("assets/music/samples/tomHigh.wav"), -10)
     };
   }
 }
@@ -166,13 +156,13 @@ class PercKit extends Kit {
 
     this.voices = {
       rim: v(new Tone.MembraneSynth({ pitchDecay: 0.005, octaves: 1, envelope: { decay: 0.04, sustain: 0 } }), -10, out, ["A4", "32n"]),
-      clap: v(new Tone.Player("../assets/music/samples/clap.wav"), -10, out),
+      clap: v(new Tone.Player("assets/music/samples/clap.wav"), -10, out),
       hatClosed: v(new Tone.NoiseSynth({ envelope: { attack: 0.001, decay: 0.03, sustain: 0 } }), -14),
       hatOpen: v(new Tone.NoiseSynth({ envelope: { attack: 0.001, decay: 0.25, sustain: 0 } }), -16),
-      crash: v(new Tone.Player("../assets/music/samples/crash.wav"), -10, out),
-      ride: v(new Tone.Player("../assets/music/samples/ride.wav"), -10, out),
-      shaker: v(new Tone.Player("../assets/music/samples/shaker.wav"), -10, out),
-      tambourine: v(new Tone.Player("../assets/music/samples/tamb.wav"), -10, out),
+      crash: v(new Tone.Player("assets/music/samples/crash.wav"), -10, out),
+      ride: v(new Tone.Player("assets/music/samples/ride.wav"), -10, out),
+      shaker: v(new Tone.Player("assets/music/samples/shaker.wav"), -10, out),
+      tambourine: v(new Tone.Player("assets/music/samples/tamb.wav"), -10, out),
       cowbell: v(new Tone.Synth({ oscillator: { type: "square" }, envelope: { attack: 0.001, decay: 0.12, sustain: 0 } }), -22, out, [800, "16n"]),
     };
   }

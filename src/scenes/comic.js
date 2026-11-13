@@ -73,10 +73,7 @@ class ComicScene {
       content.addChild(new PIXI.Graphics().rect(x, y, w, h).fill(CONFIG.PAPER).stroke({ width: 6, color: CONFIG.INK }));
 
       // Speech bubble
-      const text = new PIXI.Text({
-        text: quote,
-        style: { fontFamily: CONFIG.FONT, fontSize: quotes.length > 2 ? 26 : 34, fontWeight: "bold", fill: CONFIG.INK, align: "center", wordWrap: true, wordWrapWidth: w - 70 },
-      });
+      const text = makeText(quote, quotes.length > 2 ? 26 : 34, "bold", { align: "center", wordWrap: true, wordWrapWidth: w - 70 });
       text.anchor.set(0.5);
       const bw = Math.min(w - 30, text.width + 50), bh = text.height + 40;
       const bx = x + w / 2, by = y + 30 + bh / 2;
@@ -88,10 +85,7 @@ class ComicScene {
       content.addChild(bubble, text);
     });
 
-    const hint = new PIXI.Text({
-      text: `${index + 1} / ${COMIC_PAGES.length}    press any key ▶`,
-      style: { fontFamily: CONFIG.FONT, fontSize: 24, fill: CONFIG.INK },
-    });
+    const hint = makeText(`${index + 1} / ${COMIC_PAGES.length}    press any key ▶`, 24, "normal");
     hint.anchor.set(1, 0.5);
     hint.position.set(CONFIG.WIDTH - margin, CONFIG.HEIGHT - margin - footer / 2 + 10);
     content.addChild(hint);
@@ -130,24 +124,4 @@ class ComicScene {
     else if (e.key === "Escape" || e.key === "s" || e.key === "S") Scenes.go("game");
     else this.next();
   }
-}
-
-// Small text button; `underlineFirst` underlines the first letter (its key).
-function makeButton(label, onTap, underlineFirst = false) {
-  const btn = new PIXI.Container();
-  const text = new PIXI.Text({ text: label, style: { fontFamily: CONFIG.FONT, fontSize: 22, fontWeight: "bold", fill: CONFIG.INK } });
-  text.position.set(14, 6);
-  const bg = new PIXI.Graphics().roundRect(0, 0, text.width + 28, text.height + 12, 8).fill(CONFIG.PAPER).stroke({ width: 3, color: CONFIG.INK });
-  btn.addChild(bg, text);
-  if (underlineFirst) {
-    const w = PIXI.CanvasTextMetrics.measureText(label[0], text.style).width;
-    btn.addChild(new PIXI.Graphics().rect(text.x, text.y + text.height - 3, w, 2.5).fill(CONFIG.INK));
-  }
-  btn.eventMode = "static";
-  btn.cursor = "pointer";
-  btn.on("pointertap", (e) => {
-    e.stopPropagation();
-    onTap();
-  });
-  return btn;
 }

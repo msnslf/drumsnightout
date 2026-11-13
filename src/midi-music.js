@@ -7,13 +7,9 @@ const MidiMusic = {
   needsServer: false, // true if loading failed because the page was opened from disk
   autoLanes: false, // play dance lane notes too (game over: nobody's playing them)
 
-  hasClip(section) {
-    return !!this.clips[section];
-  },
-
   async load() {
-    const folder = CONFIG.MUSIC.folder;
-    for (const [section, spec] of Object.entries(CONFIG.MUSIC.clips)) {
+    const folder = MUSIC.folder;
+    for (const [section, spec] of Object.entries(MUSIC.clips)) {
       const files = [].concat(spec || []).map((f) => (typeof f === "string" ? { file: f } : f));
       const versions = [];
       // Round v: dance-x.mid -> dancev-x.mid, until a number has no files.
@@ -116,7 +112,7 @@ const MidiMusic = {
 
   // Loops the intro once audio is allowed, unless music is already running.
   playIntro() {
-    if (Clock.running || Clock.ctx.state !== "running" || !this.hasClip("intro")) return;
+    if (Clock.running || Clock.ctx.state !== "running" || !this.clips.intro) return;
     Clock.reset(CONFIG.BPM);
     this.start("intro");
     Clock.start();

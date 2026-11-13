@@ -13,7 +13,7 @@ class PauseMenu {
     this.view.addChild(new PIXI.Graphics().rect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT).fill({ color: CONFIG.PAPER, alpha: 0.85 }));
 
     this.main = this.view.addChild(new PIXI.Container());
-    const title = this.main.addChild(new PIXI.Text({ text: "PAUSED", style: { fontFamily: CONFIG.FONT, fontSize: 96, fontWeight: "900", fill: CONFIG.INK } }));
+    const title = this.main.addChild(makeText("PAUSED", 96, "900"));
     title.anchor.set(0.5);
     title.position.set(CONFIG.WIDTH / 2, 170);
     this.menu = new Menu([

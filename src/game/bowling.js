@@ -12,7 +12,7 @@ const PIN_ANIMS = { standing: 1, fallen: 4 }; // spritesheet animation -> frame 
 
 // Speed (1 -> 0) and distance factors of a pin `t` beats after its hit.
 function pinSlow(t) {
-  const u = Math.min(1, Math.max(0, t / PIN_STOP_BEATS)), k = PIN_DECAY, e = Math.exp(-k);
+  const u = clamp01(t / PIN_STOP_BEATS), k = PIN_DECAY, e = Math.exp(-k);
   return { speed: (Math.exp(-k * u) - e) / (1 - e), dist: (PIN_STOP_BEATS * ((1 - Math.exp(-k * u)) / k - u * e)) / (1 - e) };
 }
 const pinSpeed = (pin, t) => Math.hypot(pin.vx, pin.vy) * pinSlow(t).speed;
@@ -63,20 +63,17 @@ class BowlingMode {
     this.pinLayer = new PIXI.Container();
     this.gfx = new PIXI.Graphics();
     this.lanesView.addChild(this.pinLayer, this.gfx);
-    const clip = new PIXI.Graphics().rect(0, Layout.lanes.top, CONFIG.WIDTH, CONFIG.HEIGHT - Layout.lanes.top).fill(CONFIG.INK);
+    const clip = Layout.clip(Layout.lanes.top);
     this.view.addChild(this.lanesView, clip);
     this.lanesView.mask = clip; // balls and pins vanish into the top of the lane
     this.frames = this._placeholderFrames();
 
-    this.banner = new PIXI.Text({
-      text: "",
-      style: { fontFamily: CONFIG.FONT, fontSize: 120, fontWeight: "900", fill: CONFIG.PAPER, stroke: { color: CONFIG.INK, width: 14 } },
-    });
+    this.banner = makeText("", 120, "900", { fill: CONFIG.PAPER, stroke: { color: CONFIG.INK, width: 14 } });
     this.banner.anchor.set(0.5);
     this.banner.position.set(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2);
 
     this.hints = CONFIG.BOWL_HINT_WORDS.map((word, i) => {
-      const t = new PIXI.Text({ text: word, style: { fontFamily: CONFIG.FONT, fontSize: 48, fontWeight: "900", fill: CONFIG.INK } });
+      const t = makeText(word, 48, "900");
       t.anchor.set(0.5);
       t.position.set(Layout.lane(i).centerX, (Layout.lanes.top + Layout.lanes.bottom) / 2);
       this.view.addChild(t);
@@ -150,7 +147,7 @@ class BowlingMode {
 
   // Ball position at a beat, with bumper ricochets. Angle 0 = straight up.
   ballPos(L, beat) {
-    const p = Math.max(0, Math.min(1, (beat - L.throwBeat) / CONFIG.ROLL_BEATS));
+    const p = clamp01((beat - L.throwBeat) / CONFIG.ROLL_BEATS);
     const y = lerp(L.y0, L.y1, p);
     const a = L.lane.left + L.r, b = L.lane.right - L.r;
     const span = b - a;
@@ -164,7 +161,7 @@ class BowlingMode {
   }
 
   // Freezes the aims, then precomputes every throw and schedules its sounds.
-  throw(beat, bpm, onResult) {
+  throw(beat, bpm) {
     if (this.thrown) return;
     this.thrown = true;
     // Count from the bowl phase's start (a 2/4 bar may move the downbeat).
@@ -196,7 +193,7 @@ class BowlingMode {
     const standing = this.lanes.flatMap((L) => L.pins.filter((p) => p.knockBeat === Infinity));
     const newBpm = bpm + standing.length * CONFIG.BPM_PER_STANDING_PIN;
     this.danceBeat = standing.length ? this._countAndRamp(standing, nextHalf(lastDone), nextHalf, bpm, newBpm) : nextBar(lastDone);
-    onResult({ bpm: newBpm });
+    return { bpm: newBpm, ramp: this.count }; // ramp: null if no pins stood
   }
 
   // Precomputes which pins fall and when (by ball or pin); returns the count.
@@ -245,7 +242,7 @@ class BowlingMode {
     // Set the ramp just before toDance's first bar, so that bar follows it.
     const ramp = tempoRamp(rampStart, bpm, newBpm, 0.25);
 
-    const text = (s, size) => this.countView.addChild(new PIXI.Text({ text: s, style: { fontFamily: CONFIG.FONT, fontSize: size, fontWeight: "bold", fill: CONFIG.INK } }));
+    const text = (s, size) => this.countView.addChild(makeText(s, size));
     const labels = standing.map((p, k) => {
       const t = text(String(k + 1), 28);
       t.anchor.set(0.5);
@@ -257,11 +254,6 @@ class BowlingMode {
     times.anchor.set(1, 0);
     this.count = { labels, plus, times, home: { x: labels.at(-1).x, y: labels.at(-1).y }, start, moveStart, ...ramp };
     return rampStart;
-  }
-
-  // Tempo to show while counting and ramping (null if nothing to count).
-  displayBpm(beat) {
-    return this.count ? rampBpm(this.count, beat) : null;
   }
 
   // Round 1 hint if nobody has thrown by bowl bar 2: one word per beat.
@@ -332,7 +324,7 @@ class BowlingMode {
     const c = this.count;
     this.countView.visible = !!c && (phase.name === "bowl" || phase.name === "toDance");
     if (!this.countView.visible) return;
-    const fade = 1 - Math.min(1, Math.max(0, (beat - c.moveStart) / COUNT_MOVE_BEATS));
+    const fade = 1 - clamp01((beat - c.moveStart) / COUNT_MOVE_BEATS);
     c.labels.forEach((t, k) => {
       t.visible = beat >= c.start + k * COUNT_STEP && fade > 0;
       t.alpha = fade;

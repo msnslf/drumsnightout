@@ -1,7 +1,10 @@
 // Option list for every menu: arrows/hover, Enter/click, ← → or drag sliders.
 
 const SLIDER_W = 280, SLIDER_STEP = 0.05;
-const clamp01 = (v) => Math.min(1, Math.max(0, v));
+
+// Text in the game's font and ink; `extra` adds or overrides style.
+const makeText = (text, size, weight = "bold", extra = {}) =>
+  new PIXI.Text({ text, style: { fontFamily: CONFIG.FONT, fontSize: size, fontWeight: weight, fill: CONFIG.INK, ...extra } });
 
 class Menu {
   // items: { label, onSelect } or 0..1 sliders { label, get, set, step? }
@@ -16,7 +19,7 @@ class Menu {
   _row(item, i, x, y, gap, size) {
     const row = this.view.addChild(new PIXI.Container());
     row.position.set(x, y);
-    row.text = row.addChild(new PIXI.Text({ text: "", style: { fontFamily: CONFIG.FONT, fontSize: size, fontWeight: "bold", fill: CONFIG.INK } }));
+    row.text = row.addChild(makeText("", size));
     row.text.anchor.set(item.get ? 1 : 0.5, 0.5);
     row.eventMode = "static";
     row.cursor = "pointer";
@@ -69,4 +72,24 @@ class Menu {
     }
     else if (e.key === "Enter" || e.key === " ") item.onSelect?.();
   }
+}
+
+// Small text button; `underlineFirst` underlines the first letter (its key).
+function makeButton(label, onTap, underlineFirst = false) {
+  const btn = new PIXI.Container();
+  const text = makeText(label, 22);
+  text.position.set(14, 6);
+  const bg = new PIXI.Graphics().roundRect(0, 0, text.width + 28, text.height + 12, 8).fill(CONFIG.PAPER).stroke({ width: 3, color: CONFIG.INK });
+  btn.addChild(bg, text);
+  if (underlineFirst) {
+    const w = PIXI.CanvasTextMetrics.measureText(label[0], text.style).width;
+    btn.addChild(new PIXI.Graphics().rect(text.x, text.y + text.height - 3, w, 2.5).fill(CONFIG.INK));
+  }
+  btn.eventMode = "static";
+  btn.cursor = "pointer";
+  btn.on("pointertap", (e) => {
+    e.stopPropagation();
+    onTap();
+  });
+  return btn;
 }

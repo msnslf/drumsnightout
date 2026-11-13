@@ -63,5 +63,6 @@ const Song = {
   },
 };
 
-const ease = (t) => (t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t));
+const clamp01 = (v) => Math.min(1, Math.max(0, v));
+const ease = (t) => ((t = clamp01(t)), t * t * (3 - 2 * t));
 const lerp = (a, b, t) => a + (b - a) * t;

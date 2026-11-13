@@ -13,18 +13,18 @@ class CalibrateScene {
 
     this.arrowLayer = new PIXI.Container();
     this.view.addChild(this.arrowLayer);
-    this.arrowLayer.mask = this.view.addChild(Layout.danceClip());
+    this.arrowLayer.mask = this.view.addChild(Layout.clip(Layout.danceTop.y));
 
-    const style = (size, weight = "bold") => ({ fontFamily: CONFIG.FONT, fontSize: size, fontWeight: weight, fill: CONFIG.INK, align: "center" });
-    this.title = new PIXI.Text({ text: "CALIBRATE", style: style(30, "900") });
+    const center = { align: "center" };
+    this.title = makeText("CALIBRATE", 30, "900", center);
     this.title.position.set(16, 14);
-    this.hint = new PIXI.Text({ text: "", style: style(20, "normal") });
+    this.hint = makeText("", 20, "normal", center);
     this.hint.anchor.set(0.5, 0);
     this.hint.position.set(CONFIG.WIDTH / 2, 20);
-    this.big = new PIXI.Text({ text: "", style: style(64, "900") });
+    this.big = makeText("", 64, "900", center);
     this.big.anchor.set(0.5);
     this.big.position.set(CONFIG.WIDTH / 2, Layout.countY);
-    this.progress = new PIXI.Text({ text: "", style: style(24) });
+    this.progress = makeText("", 24, "bold", center);
     this.progress.anchor.set(0.5);
     this.progress.position.set(CONFIG.WIDTH / 2, Layout.drums.floorY + 34);
     const back = makeButton("BACK", () => this._back());
@@ -91,7 +91,7 @@ class CalibrateScene {
     const mid = sorted.length / 2;
     const median = sorted.length % 2 ? sorted[Math.floor(mid)] : (sorted[mid - 1] + sorted[mid]) / 2;
     const offset = -Math.round(median);
-    Clock.setInputOffset(offset);
+    Settings.inputOffsetMs = offset;
     const late = median > 0;
     this.big.text = `Offset: ${offset > 0 ? "+" : ""}${offset} ms`;
     this.progress.text = `you were tapping ${Math.abs(Math.round(median))} ms ${late ? "late" : "early"} on average`;
@@ -105,7 +105,7 @@ class CalibrateScene {
     if (e.key === "Escape") return this._back();
     if (this.doneAt !== null) return;
     if (!(Settings.keys.includes(e.key.toLowerCase()) || e.key === " ")) return;
-    const beat = Clock.rawBeatOfEvent(e);
+    const beat = Clock.beatOfEvent(e, 0);
     const n = this.notes[Math.round(beat) - CAL_COUNT_IN];
     if (!n || n.hit) return;
     const deltaBeats = beat - n.beat;

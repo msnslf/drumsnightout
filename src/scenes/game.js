@@ -26,11 +26,8 @@ class GameScene {
     this.hud = new PIXI.Graphics();
     this.overlay = new PIXI.Container();
 
-    const text = (size, extra = {}) =>
-      new PIXI.Text({ text: "", style: { fontFamily: CONFIG.FONT, fontSize: size, fontWeight: "bold", fill: CONFIG.INK, ...extra } });
-
     // Top row: party clock + tempo on the left, pause button on the right.
-    this.info = text(22);
+    this.info = makeText("", 22);
     this.info.position.set(16, 16);
     this.pause = new PauseMenu({
       onToggle: (paused) => {
@@ -42,11 +39,11 @@ class GameScene {
     });
     this.pause.button.position.set(CONFIG.WIDTH - 20 - this.pause.button.width, 14);
 
-    this.title = text(30);
+    this.title = makeText("", 30);
     this.title.anchor.set(0.5, 0);
     this.title.position.set(CONFIG.WIDTH / 2, 12);
 
-    this.countIn = text(140, { fontWeight: "900" });
+    this.countIn = makeText("", 140, "900");
     this.countIn.anchor.set(0.5);
     this.countIn.position.set(CONFIG.WIDTH / 2, Layout.countY);
 
@@ -107,9 +104,9 @@ class GameScene {
 
   _throw(beat) {
     if (this.bowling.thrown || this.gameOverBeat < Infinity) return;
-    this.bowling.throw(beat, this.bpm, ({ bpm }) => {
-      this.bpm = bpm; // BowlingMode ramps the tempo up to this for standing pins
-    });
+    const { bpm, ramp } = this.bowling.throw(beat, this.bpm);
+    this.bpm = bpm; // BowlingMode ramps the tempo up to this for standing pins
+    if (ramp) this.ramps.push(ramp);
     this.bowling.lanes.forEach((L, i) => this.drums[i].spin(L.throwBeat));
   }
 
@@ -221,7 +218,7 @@ class GameScene {
     this.title.text = st.title < 0.5 ? "club neutral clef" : "neutral clef lanes";
     this.title.alpha = Math.abs(1 - 2 * st.title); // fades out, swaps, fades in
     const ramp = this.ramps.find((r) => beat < r.rampEnd);
-    const bpm = ramp ? rampBpm(ramp, beat) : this.bowling.displayBpm(beat) ?? this.bpm;
+    const bpm = ramp ? rampBpm(ramp, beat) : this.bpm;
     this.info.text = `${partyTime(beat)}   ${bpm.toFixed(1)} BPM`;
     this.bowling.tempoAnchor = { x: this.info.x + this.info.width, y: this.info.y + this.info.height + 4 };
 

@@ -5,12 +5,12 @@ const GAME_OVER_ZOOM_MS = 900; // zoom-in / fade time; REPLAY is ignored until i
 class GameOverPanel {
   constructor() {
     this.view = new PIXI.Container();
-    const style = (size) => ({ fontFamily: CONFIG.FONT, fontSize: size, fontWeight: "900", fill: CONFIG.INK, align: "center" });
+    const center = { align: "center" };
     const x = CONFIG.WIDTH * 0.28;
-    this.title = new PIXI.Text({ text: "PANCAKES!", style: style(96) });
+    this.title = makeText("PANCAKES!", 96, "900", center);
     this.title.anchor.set(0.5);
     this.title.position.set(x, 190);
-    this.sub = new PIXI.Text({ text: "", style: style(30) });
+    this.sub = makeText("", 30, "900", center);
     this.sub.anchor.set(0.5);
     this.sub.position.set(x, 370);
     this.menu = new Menu([{ label: "REPLAY", onSelect: () => this.replay() }], { x, y: 540 });

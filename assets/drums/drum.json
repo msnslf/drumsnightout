@@ -22,7 +22,6 @@
     "pose3": ["pose3_0", "pose3_1", "pose3_2", "pose3_3"]
   },
   "meta": {
-    "image": "drum2.png",
     "format": "RGBA8888",
     "size": { "w": 1536, "h": 1152 },
     "scale": "3"

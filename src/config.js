@@ -33,16 +33,16 @@ const CONFIG = {
   // --- Dancing ---
   // Default key per lane, left to right; players rebind them in settings.
   LANE_KEYS: ["d", "f", "j", "k"],
-  LANE_DRUMS: [41, 36, 38, 45], // MIDI note per lane in the dance drums clip: low tom, kick, snare, high tom
+  LANE_DRUMS: [41, 36, 38, 45], // MIDI note per dance lane: low tom, kick, snare, high tom
   PATTERN_LOOKAHEAD_BEATS: 10, // beats a letter takes from the top of the lane to the hit line
   HIT_CUE_SCALE: 3, // hit cue size at the hit line
   JUDGE_HOLD_BEATS: 2, // how long judgement text stays up...
   JUDGE_SHORT_BEATS: 0.5, // ...or this long, when the lane's next note is 1 beat or less away
   // Judgement words, one picked at random each time.
   JUDGE_WORDS: {
-    miss: ["miss", "oof", "nope", "dang", "geez", "ahh", "ooh", "soup", "zzz", "...", "wut", "why", "za", ":(", "x_x", "sus", "%$&*", "fi", "sus", "rabbit", "dog", "tree", "over it", "hazy", "purple", "salt on the wound", "whee", "qwerty", "quarrelsome", "lofi", "compostable", "matte", "ah chips", "need ice cream", "quagmire", "rocked", "trippy", "bracing", "avatar", "jam", "squid"],
-    good: ["good", "cool", "ok", "neat", "nice", "fine", "food", "crust", "bread", "done", "did it", "did that", "fly", "car", "truck", "boop", "flower", ":)", "interesting", "good enough", "sutible", "potato", "lucky", "egg", "candy", "hyper pop", "so 90's", "millenial", "futuristic", "1080p", "recyclable", "metallic", "grunge", "vinegar", "apple orchard", "happy", "industrial", "rocknroll", "root beer", "happy holidays", "Q3 savings", "viable", "value", "valiant", "rest easy", "boot", "cat"],
-    perfect: ["wow", "perfect", "great", "dope", "nails", "lit", "tight", "drums", "pro", "coffee", "encore", "boom", "roasted", "4K", "elemental", "<3", "$$$$$", "slick", "sick as", "subtle", "sublime", "super", "upgrade-worhty", "powerful", "fancy", "fortunate", "quintessential", "renewable", "solar", "galactic", "shiny", "grapeseed oil", "true north", "omniscient", "adorbs", "v tight", "surfs up", "virtue", "driving", "supercalifragilistic" 
+    miss: ["miss", "oof", "nope", "dang", "geez", "ahh", "ooh", "soup", "zzz", "...", "wut", "why", "za", ":(", "x_x", "sith", "%$&*", "fi", "sus", "rabbit", "dog", "tree", "over it", "hazy", "purple", "salt on the wound", "whee", "qwerty", "quarrelsome", "lofi", "compostable", "matte", "ah chips", "need ice cream", "quagmire", "rocked", "trippy", "bracing", "avatar", "jam", "squid", "needs to thaw", "a long walk uphill", "sun is still shining", "dubious", "cloudy", "murky", "ill", "go to sleep"],
+    good: ["good", "cool", "ok", "neat", "nice", "fine", "food", "crust", "bread", "done", "did it", "did that", "fly", "car", "truck", "boop", "flower", ":)", "interesting", "good enough", "sutible", "potato", "lucky", "egg", "candy", "hyper pop", "so 90's", "millenial", "futuristic", "1080p", "recyclable", "metallic", "grunge", "vinegar", "apple orchard", "happy", "industrial", "rocknroll", "root beer", "happy holidays", "Q3 earnings", "viable", "value", "valiant", "rest easy", "boot", "cat", "organic", "illustrious", "elaborate", "expressive"],
+    perfect: ["wow", "perfect", "great", "dope", "nails", "lit", "tight", "drums", "pro", "coffee", "encore", "boom", "roasted", "4K", "elemental", "<3", "$$$$$", "slick", "sick as", "subtle", "sublime", "super", "upgrade-worhty", "powerful", "fancy", "fortunate", "quintessential", "renewable", "solar", "galactic", "shiny", "grapeseed oil", "true north", "omniscient", "adorbs", "v tight", "surfs up", "virtue", "driving", "supercalifragilistic", "existential", "decadent", "clutch" 
     ],
   },
   MISSES_PER_SQUISH: 3,
