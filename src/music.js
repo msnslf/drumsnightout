@@ -72,9 +72,10 @@ const Music = {
       return (time) => s.triggerAttackRelease(pitch(note, randomizeRange), 0.01, nextStart(s, time));
     };
     // Each sample play gets its own player, so overlaps aren't cut.
-    const play = (buf, out, time) => {
+    // `semitones` shifts pitch via playback rate (so it also changes length).
+    const play = (buf, out, time, semitones = 0) => {
       if (!buf) return;
-      const player = new Tone.Player(buf).connect(out);
+      const player = new Tone.Player({ url: buf, playbackRate: 2 ** (semitones / 12) }).connect(out);
       player.onstop = () => player.dispose();
       player.start(time);
     };
@@ -85,7 +86,8 @@ const Music = {
       if (!bufs.length) return;
       const i = Math.floor(Math.random() * bufs.length);
       const j = bufs.length > 1 ? (i + 1 + Math.floor(Math.random() * (bufs.length - 1))) % bufs.length : i;
-      [i, j].forEach((k, side) => play(bufs[k], pans[side], time));
+      const shift = () => Math.floor(Math.random() * 11) - 5; // -5..+5 semitones, per voice
+      [i, j].forEach((k, side) => play(bufs[k], pans[side], time, shift()));
     };
     const rollFilter = new Tone.Filter(300, "lowpass").connect(new Tone.Filter(150, "highpass").connect(sfx));
     // One roll per lane (balls overlap), panned to its lane.
@@ -94,7 +96,7 @@ const Music = {
       sfx_ballRoll: (time, voice) => rolls[voice].triggerAttack(time),
       sfx_pinHitSingle: pop("G3", 0.12),
       sfx_pinCount: click("C6", -14, { randomizeRange: [-12, 12] }),
-      sfx_bpmUpdate: click("G6", -18),
+      sfx_bpmUpdate: click("G6", -23),
       sfx_bowlingMiss: (time) => play(this.samples["bowling-miss"], sfx, time),
       vo_strike: pair("strike"),
       vo_multistrike: pair("multistrike"),
