@@ -100,7 +100,10 @@ const MidiMusic = {
       console.warn(`♪ no instrument "${key}" in instruments.js, using ${DEFAULT_INSTRUMENT}`);
       key = DEFAULT_INSTRUMENT;
     }
-    if (!this.instruments[key]) this.instruments[key] = INSTRUMENTS[key](Mixer.in[key] || Mixer.in.nodrums);
+    if (!this.instruments[key]) {
+      const inst = (this.instruments[key] = INSTRUMENTS[key](Mixer.in[key]));
+      inst.cc = { ...inst.cc, 3: sendCC(key, "reverb") }; // every instrument's reverb send follows CC3
+    }
     return this.instruments[key];
   },
 
@@ -140,10 +143,7 @@ const MidiMusic = {
     const into = Math.round(beat - phase.startBeat);
     const from = into % bpb; // 0: first half of the bar, bpb / 2: second half
     if (from % (bpb / 2)) return; // not a half-bar line of this phase
-    if (phase.name === "toDance" && into === 0) {
-      Mixer.swellReverb(time);
-      Music.revCymbal(time, Clock.timeAfter(time, phase.endBeat - phase.startBeat)); // ends on the dance downbeat
-    }
+    if (phase.name === "toDance" && into === 0) Music.revCymbal(time, Clock.timeAfter(time, phase.endBeat - phase.startBeat)); // ends on the dance downbeat
     const room = phase.endBeat - beat; // a 2/4 bar drops the bar's second half
     const notes = this.barNotes(phase.name, phase.cycle, (into - from) / bpb);
     for (const note of notes) {

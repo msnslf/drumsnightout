@@ -4,8 +4,8 @@ const MIX = {
   drums: { gain: -5, reverb: -60, distortion: -60 },
   perc: { gain: 2, reverb: -60, distortion: -60 },
   bass: { gain: 8, reverb: -60, distortion: -60 },
-  chords: { gain: 7, reverb: -60, distortion: -12, pan: -1, swell: -3 },
-  melody: { gain: 0, reverb: -60, distortion: -12, pan: 1, swell: -3 },
+  chords: { gain: 7, reverb: -3, distortion: -12, pan: -1 },
+  melody: { gain: 0, reverb: -3, distortion: -12, pan: 1 },
   nodrums: { gain: 0, reverb: -60, distortion: -60, duck: 17 },
   all: { gain: 0, reverb: -60, distortion: -60, duck: 0, threshold: -17 },
   sfx: { gain: 0, reverb: -60, distortion: -60 },
@@ -29,7 +29,7 @@ const Mixer = {
     const master = new Tone.Gain().chain(lowCut(150), new Tone.Limiter(-14).toDestination());
     this.distortion = new Tone.Distortion({ distortion: MIX.distortion.amount, wet: 1 });
     this.delay = new Tone.PingPongDelay({ delayTime: (this.delayTarget = this._delayTime()), maxDelay: 2, wet: 1 });
-    const fx = { reverb: [new Tone.Reverb({ decay: 2, wet: 1 })], distortion: [this.delay, this.distortion] };
+    const fx = { reverb: [new Tone.Reverb({ decay: 3, wet: 1 })], distortion: [this.delay, this.distortion] };
     this.fade = new Tone.Gain().connect(master);
     this.lowpass = new Tone.Filter({ type: "lowpass", frequency: 20000, Q: 0.7 }).connect(this.fade);
     for (const name of Object.keys(fx)) {
@@ -82,16 +82,6 @@ const Mixer = {
     this.user[group].volume.value = db;
     for (const [name, sends] of Object.entries(this.sends))
       if (this._group(name) === group) for (const key in sends) sends[key].gain.value = this._sendDb(name, key);
-  },
-
-  // toDance: melody/chords reverb sends swell to MIX swell by beat 3, back by 8.
-  swellReverb(time) {
-    for (const name of ["melody", "chords"]) {
-      const gain = this.sends[name].reverb.gain;
-      gain.setValueAtTime(this._sendDb(name, "reverb"), time);
-      gain.linearRampToValueAtTime(MIX[name].swell + this._userDb(name), Clock.timeAfter(time, 3));
-      gain.linearRampToValueAtTime(this._sendDb(name, "reverb"), Clock.timeAfter(time, 8));
-    }
   },
 
   // Scales a send by a CC value (0 = off, 1 = its MIX level) at `time`.

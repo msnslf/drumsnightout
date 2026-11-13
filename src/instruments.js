@@ -28,7 +28,7 @@ const INSTRUMENTS = {
       filter: {Q: 1, type: "lowpass", rolloff: -12},
       filterEnvelope: { attack: 0.001, decay: 0.5, release: 0.2, sustain: 0.1, baseFrequency: 3000, octaves: 2} 
     });
-    return { ...melodic(synth, filter, -20, { mono: true }), cc: { ...cc, ...sendCC("melody") } };
+    return { ...melodic(synth, filter, -20, { mono: true }), cc: { ...cc, 2: sendCC("melody", "distortion") } };
   },
 
   chords: (out) => {
@@ -37,12 +37,12 @@ const INSTRUMENTS = {
       oscillator: { type: "fatsawtooth", count: 3, spread: 30 },
       envelope: { attack: 0.05, decay: 0.05, sustain: 0.5, release: 0.01 },
     });
-    return { ...melodic(synth, filter, -30), cc: { ...cc, ...sendCC("chords") } };
+    return { ...melodic(synth, filter, -30), cc: { ...cc, 2: sendCC("chords", "distortion") } };
   },
 };
 
-// CC values (0–1) for tracks without that CC: cutoff 95, send 0.
-const CC_DEFAULTS = { 1: 95 / 127, 2: 0 };
+// CC values (0–1) for tracks without that CC: cutoff 95, sends 0.
+const CC_DEFAULTS = { 1: 95 / 127, 2: 0, 3: 0 };
 
 // MIDI CC value (0–1) -> Hz on an exponential scale, so the sweep sounds even.
 const ccToHz = (value, min, max) => min * (max / min) ** value;
@@ -53,8 +53,8 @@ function cutoffCC(out) {
   return { filter, cc: { 1: (value, time) => filter.frequency.setValueAtTime(ccToHz(value, 50, 20000), time) } };
 }
 
-// CC2 scales a channel's delay+distortion send: 0 = off, 127 = its MIX level.
-const sendCC = (name) => ({ 2: (value, time) => Mixer.setSendCC(name, "distortion", value, time) });
+// Scales a channel's send by a CC: 0 = off, 127 = its MIX level.
+const sendCC = (name, key) => (value, time) => Mixer.setSendCC(name, key, value, time);
 
 // Wraps any Tone instrument with the play() interface the MIDI player uses.
 function melodic(synth, out, volumeDb, { mono = false } = {}) {
