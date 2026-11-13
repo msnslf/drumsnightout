@@ -17,6 +17,7 @@ const Clock = {
 
   // Must be called from a user gesture (browser autoplay rules).
   unlock() {
+    if (navigator.audioSession) navigator.audioSession.type = "playback"; // iOS: play even with the ringer on silent
     if (this.paused) return Promise.resolve();
     return Tone.start();
   },

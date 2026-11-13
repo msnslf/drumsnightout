@@ -1,12 +1,14 @@
 // The main game: everything is drawn from the beat, phase and layout state.
 
-// Party clock: 11:03pm + 1 h a round; ticks 45 min over dance and toBowl.
+// Party clock: 11:03pm + 1 h a round; ticks 45 min over dance (once a bar) and toBowl (once a beat).
 function partyTime(beat) {
   const phase = Song.phaseAt(beat), cycle = Math.max(0, phase.cycle);
   let minutes = phase.name === "countoff" ? 0 : 45;
   if (phase.name === "dance" || phase.name === "toBowl") {
     const beats = Song.phaseBeats("dance", cycle) + Song.phaseBeats("toBowl", cycle);
-    minutes = Math.round((Math.floor(beat - Song.phaseStart(cycle, "dance")) * 45) / beats);
+    const step = phase.name === "dance" ? CONFIG.BEATS_PER_BAR : 1;
+    const elapsed = Math.floor((beat - Song.phaseStart(cycle, "dance")) / step) * step;
+    minutes = Math.round((elapsed * 45) / beats);
   }
   const total = 23 * 60 + 3 + cycle * 60 + minutes, h = Math.floor(total / 60) % 24;
   return `${h % 12 || 12}:${String(total % 60).padStart(2, "0")}${h < 12 ? "am" : "pm"}`;

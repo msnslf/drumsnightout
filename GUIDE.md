@@ -161,5 +161,5 @@ drums and perc use General MIDI note numbers; a note from the other map is passe
 - **`Clock.beat()` is frozen while paused** and 0 before audio starts.
 - **The bowling loop decides 1/8 beat before each bar line** whether to repeat the bar, so a throw at the last instant may cost one more bar.
 - **Charts use absolute beats:** never build a future cycle's chart before its start is final (`_activeCycles`).
-- **Browsers block audio until a user gesture;** `Input` unlocks it on every key/click.
+- **Browsers block audio until a user gesture;** `Input` unlocks it on every key/click. `Clock.unlock` also sets `navigator.audioSession.type = "playback"` so iPhones play on silent (and pause other apps' audio).
 - **Settings aren't saved:** a reload starts with the defaults in `config.js`.

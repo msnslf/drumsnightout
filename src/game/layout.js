@@ -1,18 +1,18 @@
 // Stage geometry, plus the transitions' choreography (Layout.state).
 
 const HUD_H = 56;
-const FLOOR_Y = HUD_H + (CONFIG.HEIGHT - HUD_H) * 0.925;
+const FLOOR_Y = HUD_H + (CONFIG.HEIGHT - HUD_H) * 0.925 + 5;
 
 const Layout = {
   drums: { floorY: FLOOR_Y, scale: 1.7 },
   danceTop: { x: CONFIG.WIDTH / 2, y: 110 }, // centre of the dance lanes' top edge
   danceTopWidth: 1 / 8, // lane width at the top, as a fraction of the width at the hit line
   clefHomeY: 81,
-  lanes: { top: 110, bottom: FLOOR_Y - 200 }, // bowling lanes, ending just above the drums
+  lanes: { top: 110, bottom: FLOOR_Y - 205 }, // bowling lanes, ending just above the drums
 
   // Hit line: its circles' bottoms sit just above the drums' heads.
   get hitY() {
-    return this.drums.floorY - 180 - this.hitRadius - this.hitHalf;
+    return this.drums.floorY - 230 - this.hitRadius - this.hitHalf;
   },
   hitHalf: 4, // half the hit line's thickness
   // Circle framing a letter on the hit line, in proportion to the letter.
