@@ -15,24 +15,21 @@ class CalibrateScene {
     this.view.addChild(this.arrowLayer);
     this.arrowLayer.mask = this.view.addChild(Layout.danceClip());
 
-    this.drum = new Drum(1);
-    this.drum.view.position.set(CONFIG.WIDTH / 2, Layout.drums.floorY);
-    this.drum.view.scale.set(Layout.drums.scale);
-    this.view.addChild(this.drum.view);
-
     const style = (size, weight = "bold") => ({ fontFamily: CONFIG.FONT, fontSize: size, fontWeight: weight, fill: CONFIG.INK, align: "center" });
     this.title = new PIXI.Text({ text: "CALIBRATE", style: style(30, "900") });
     this.title.position.set(16, 14);
     this.hint = new PIXI.Text({ text: "", style: style(20, "normal") });
-    this.hint.anchor.set(1, 0);
-    this.hint.position.set(CONFIG.WIDTH - 16, 20);
+    this.hint.anchor.set(0.5, 0);
+    this.hint.position.set(CONFIG.WIDTH / 2, 20);
     this.big = new PIXI.Text({ text: "", style: style(64, "900") });
     this.big.anchor.set(0.5);
     this.big.position.set(CONFIG.WIDTH / 2, Layout.countY);
     this.progress = new PIXI.Text({ text: "", style: style(24) });
     this.progress.anchor.set(0.5);
     this.progress.position.set(CONFIG.WIDTH / 2, Layout.drums.floorY + 34);
-    this.view.addChild(this.title, this.hint, this.big, this.progress);
+    const back = makeButton("BACK", () => this._back());
+    back.position.set(CONFIG.WIDTH - 20 - back.width, 14);
+    this.view.addChild(this.title, this.hint, this.big, this.progress, back);
   }
 
   enter() {
@@ -47,7 +44,6 @@ class CalibrateScene {
     }
     this.deltas = [];
     this.doneAt = null;
-    this.drum.reset();
     this.staff.gfx.visible = this.arrowLayer.visible = true;
     this.staff.update(Layout.state({ name: "dance", progress: 0 }));
 
@@ -65,7 +61,6 @@ class CalibrateScene {
     for (const n of this.notes) {
       n.view.visible = !n.hit && placeLetter(n.view, n.lane, n.beat - beat, 0);
     }
-    this.drum.update(beat);
 
     if (this.doneAt === null) {
       if (beat < CAL_COUNT_IN) {
@@ -78,7 +73,7 @@ class CalibrateScene {
       this.progress.text = `${this.deltas.length} / ${CAL_NOTES}`;
       if (beat > CAL_COUNT_IN + CAL_NOTES) this._finish();
     } else if (performance.now() - this.doneAt > 2800) {
-      Scenes.go("title", { page: "difficulty" });
+      this._back();
     }
   }
 
@@ -102,8 +97,12 @@ class CalibrateScene {
     this.progress.text = `you were tapping ${Math.abs(Math.round(median))} ms ${late ? "late" : "early"} on average`;
   }
 
+  _back() {
+    Scenes.go("title", { page: "difficulty" });
+  }
+
   onKey(e) {
-    if (e.key === "Escape") return Scenes.go("title", { page: "difficulty" });
+    if (e.key === "Escape") return this._back();
     if (this.doneAt !== null) return;
     if (!(Settings.keys.includes(e.key.toLowerCase()) || e.key === " ")) return;
     const beat = Clock.rawBeatOfEvent(e);
@@ -113,6 +112,5 @@ class CalibrateScene {
     if (Math.abs(deltaBeats) > 0.4) return; // way off: ignore rather than skew the result
     n.hit = true;
     this.deltas.push(Clock.beatsToMs(deltaBeats));
-    this.drum.dance();
   }
 }

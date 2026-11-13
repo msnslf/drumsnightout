@@ -22,7 +22,7 @@ class PauseMenu {
       { label: "QUIT", onSelect: () => Scenes.go("title") },
     ], { y: 330 });
     this.main.addChild(this.menu.view);
-    this.settings = new SettingsPanel({ calibrate: false, onBack: () => this._showSettings(false) });
+    this.settings = new SettingsPanel({ onBack: () => this._showSettings(false) });
     this.view.addChild(this.settings.view);
     this.show(false);
   }

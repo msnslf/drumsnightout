@@ -56,7 +56,6 @@ class ComicScene {
 
   _buildPage(index) {
     const page = new PIXI.Container();
-    page.drums = [];
     const quotes = COMIC_PAGES[index];
     const margin = 40, gutter = 24, footer = 50, top = 70;
     const w = (CONFIG.WIDTH - margin * 2 - gutter * (quotes.length - 1)) / quotes.length;
@@ -87,16 +86,6 @@ class ComicScene {
       bubble.moveTo(bx - 16, by + bh / 2 + 7).lineTo(bx - 26, by + bh / 2 + 50).lineTo(bx + 10, by + bh / 2 + 7).stroke({ width: 4, color: CONFIG.INK });
       text.position.set(bx, by);
       content.addChild(bubble, text);
-
-      // Placeholder cast. TODO: replace with drawn comic panels.
-      const count = index <= 1 ? 4 : 1;
-      for (let k = 0; k < count; k++) {
-        const d = new Drum((i + k) % 4);
-        d.view.position.set(x + (w * (k + 1)) / (count + 1), y + h - 30);
-        d.view.scale.set(count > 1 ? 0.9 : 1.3);
-        content.addChild(d.view);
-        page.drums.push(d);
-      }
     });
 
     const hint = new PIXI.Text({
@@ -118,9 +107,6 @@ class ComicScene {
   update() {
     MidiMusic.playIntro(); // normally already started on the title screen
     this.pause.update();
-    // Drums bounce to the music if it's playing, else to a made-up beat.
-    const beat = Clock.running ? Clock.beat() : performance.now() / (60000 / CONFIG.BPM);
-    for (const page of this.pageLayer.children) for (const d of page.drums) d.update(beat);
 
     if (this.turning) {
       const p = (performance.now() - this.turning.start) / PAGE_TURN_MS;

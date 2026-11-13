@@ -13,7 +13,7 @@ Title: PLAY (comic, then the game) or SETTINGS (difficulty and starting tempo, a
 Keys: D F J K to dance (one per lane, left to right; change them in SETTINGS → CONTROLS), any key to bowl (freezes all four aims; the drums then bowl one per half note), P (or PAUSE, top right) to pause (RESUME / SETTINGS / QUIT), Esc back to the title.
 Intro: any key/click turns the page, SKIP, S or Esc jumps straight to the game, P or PAUSE pauses (same pause menu as in the game). Game over: the pancake zooms in with REPLAY beside it.
 Bowling loops bar by bar until everyone has bowled. Standing pins are counted and raise the tempo before dancing resumes. A drum's second stick squish raises it 5 BPM.
-Calibration: pick SETTINGS → DIFFICULTY → CALIBRATE on the title screen and tap along to 16 quarter notes; the offset is saved in your browser.
+Calibration: pick SETTINGS → DIFFICULTY → CALIBRATE (on the title screen, or in the pause menu, which ends the current game) and tap along to 16 quarter notes; the offset is saved in your browser.
 `[` / `]` nudge the input offset by 5 ms.
 
 **Changing things? Start with [`GUIDE.md`](GUIDE.md)**, a map of how and where everything is implemented, with recipes for common changes.

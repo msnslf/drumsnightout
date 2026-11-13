@@ -64,9 +64,9 @@ const AudioPreview = {
   },
 };
 
-// SETTINGS pages; `calibrate` adds CALIBRATE (left out mid-game).
+// SETTINGS → DIFFICULTY / AUDIO MIX / CONTROLS pages.
 class SettingsPanel {
-  constructor({ calibrate, onBack }) {
+  constructor({ onBack }) {
     this.view = new PIXI.Container();
     this.onBack = onBack;
     this.heading = this.view.addChild(new PIXI.Text({ text: "", style: { fontFamily: CONFIG.FONT, fontSize: 56, fontWeight: "900", fill: CONFIG.INK } }));
@@ -88,10 +88,8 @@ class SettingsPanel {
       set: (v) => Settings.setBpm(Math.round(lo + v * (hi - lo))),
       step: 5 / (hi - lo), // ← → move 5 bpm
     });
-    if (calibrate) {
-      const offset = () => Math.round(Clock.inputOffsetMs);
-      levels.push({ label: () => `CALIBRATE   (offset ${offset() > 0 ? "+" : ""}${offset()} ms)`, onSelect: () => Scenes.go("calibrate") });
-    }
+    const offset = () => Math.round(Clock.inputOffsetMs);
+    levels.push({ label: () => `CALIBRATE   (offset ${offset() > 0 ? "+" : ""}${offset()} ms)`, onSelect: () => Scenes.go("calibrate") });
     const controls = Settings.keys.map((_, lane) => ({
       label: () => `LANE ${lane + 1}   ${this.binding === lane ? "press a key…" : Settings.keys[lane].toUpperCase()}`,
       onSelect: () => (this.binding = lane),
