@@ -21,8 +21,6 @@ class CalibrateScene {
     this.hint = makeText("", 20, "normal", center);
     this.hint.anchor.set(0.5, 0);
     this.hint.position.set(CONFIG.WIDTH / 2, 20);
-    const warn = makeText("bluetooth audio strongly discouraged (latency)", 18, "bold", center);
-    warn.position.set(16, 52);
     this.big = makeText("", 64, "900", center);
     this.big.anchor.set(0.5);
     this.big.position.set(CONFIG.WIDTH / 2, Layout.countY);
@@ -37,16 +35,32 @@ class CalibrateScene {
     this.detail.position.set(CONFIG.WIDTH / 2, 285);
     this.menu = new Menu([
       { label: "CONTINUE", onSelect: () => this._done() },
-      { label: "RECALIBRATE", onSelect: () => Scenes.go("calibrate", { then: this.then }) },
+      { label: "RECALIBRATE", onSelect: () => Scenes.go("calibrate", { then: this.then, ready: true }) },
     ], { y: 400 });
+
+    // Instructions overlay (pause menu style); OK starts the calibration.
+    this.info = new PIXI.Container();
+    this.info.eventMode = "static"; // swallows clicks
+    this.info.hitArea = new PIXI.Rectangle(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    this.info.on("pointertap", (e) => e.stopPropagation());
+    this.info.addChild(new PIXI.Graphics().rect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT).fill({ color: CONFIG.PAPER, alpha: 0.85 }));
+    const heading = this.info.addChild(makeText("CALIBRATION", 96, "900"));
+    heading.anchor.set(0.5);
+    heading.position.set(CONFIG.WIDTH / 2, 170);
+    this.howTo = this.info.addChild(makeText("", 32, "bold", { align: "center", wordWrap: true, wordWrapWidth: 1000 }));
+    this.howTo.anchor.set(0.5);
+    this.howTo.position.set(CONFIG.WIDTH / 2, 340);
+    this.ok = new Menu([{ label: "OK", onSelect: () => this._start() }], { y: 520 });
+    this.info.addChild(this.ok.view);
     this.back = makeButton("BACK", () => this._done());
     this.skip = makeButton("SKIP ▶▶", () => this._done(), true); // underlined S: the skip key
     for (const b of [this.back, this.skip]) b.position.set(CONFIG.WIDTH - 20 - b.width, 14);
-    this.view.addChild(this.title, this.hint, warn, this.big, this.progress, this.result, this.detail, this.menu.view, this.back, this.skip);
+    this.view.addChild(this.title, this.hint, this.big, this.progress, this.result, this.detail, this.menu.view, this.info, this.back, this.skip);
   }
 
   // then: scene to go to when done (first PLAY: "comic"); else the title's difficulty page.
-  enter({ then }) {
+  // ready: skip the instructions overlay (RECALIBRATE).
+  enter({ then, ready }) {
     Settings.calibrated = true;
     this.then = then;
     this.back.visible = !then;
@@ -56,27 +70,44 @@ class CalibrateScene {
     this.hint.text = Settings.touch
       ? `Tap on every beat, as each dot hits the line   •   ${then ? "SKIP to skip" : "BACK to cancel"}`
       : `Tap any of ${Settings.keys.join(" ").toUpperCase()} on every beat, as each letter hits the line   •   ${leave}`;
+    this.howTo.text = (Settings.touch
+      ? "tap on beat as the dots arrive."
+      : `tap ${Settings.keys.join(" ").toUpperCase()} on beat as the letters arrive.`) +
+      "\n(bluetooth audio will be problematic with latency!)";
+    this.music = !!then && !!MidiMusic.clips.intro; // first PLAY: tap to the intro, not the metronome
+    this.notes = [];
+    this.deltas = [];
+    this.started = this.finished = false;
+    this.result.text = this.detail.text = this.big.text = "";
+    this.progress.text = `0 / ${CAL_NOTES}`;
+    this.menu.view.visible = false;
+    this.menu.choice = 0;
+    this.staff.gfx.visible = this.arrowLayer.visible = true;
+    this.staff.update(Layout.state({ name: "dance", progress: 0 }));
+    this.info.visible = !ready;
+    if (ready) this._start();
+  }
+
+  // Starts on the intro's next downbeat (left playing), or with a fresh metronome.
+  _start() {
+    this.started = true;
+    this.info.visible = false;
+    if (this.music && Clock.running) {
+      this.base = Math.round(Clock.beatAtTime(Clock.nextBar())); // intro keeps playing; start on its next downbeat
+    } else {
+      this.base = 0;
+      Clock.reset(CONFIG.BPM);
+      if (this.music) MidiMusic.start("intro");
+      else Music.startMetronome(CAL_COUNT_IN);
+      Clock.start();
+    }
     this.notes = [];
     for (let i = 0; i < CAL_NOTES; i++) {
       const lane = CAL_LANES[i % CAL_LANES.length];
       const view = makeLetter(lane);
       this.arrowLayer.addChild(view);
-      this.notes.push({ beat: CAL_COUNT_IN + i, lane, hit: false, view });
+      this.notes.push({ beat: this.base + CAL_COUNT_IN + i, lane, hit: false, view });
     }
-    this.deltas = [];
-    this.finished = false;
-    this.result.text = this.detail.text = "";
-    this.menu.view.visible = false;
-    this.menu.choice = 0;
-    this.staff.gfx.visible = this.arrowLayer.visible = true;
-    this.staff.update(Layout.state({ name: "dance", progress: 0 }));
-
-    this.music = !!then && !!MidiMusic.clips.intro; // first PLAY: tap to the intro, not the metronome
-    const startAt = this.music && Clock.nextBar(); // continue the title's intro on its next downbeat
-    Clock.reset(CONFIG.BPM);
-    if (this.music) MidiMusic.start("intro");
-    else Music.startMetronome(CAL_COUNT_IN);
-    Clock.start(startAt || undefined);
   }
 
   exit() {
@@ -84,20 +115,22 @@ class CalibrateScene {
   }
 
   update() {
+    if (!this.started) return this.ok.update();
     if (this.finished) return this.menu.update();
     const beat = Clock.beat();
     for (const n of this.notes) {
       n.view.visible = !n.hit && placeLetter(n.view, n.lane, n.beat - beat, 0);
     }
-    if (beat < CAL_COUNT_IN) {
-      const k = Math.floor(beat);
+    const t = beat - this.base; // beats since calibration's first downbeat
+    if (t >= 0 && t < CAL_COUNT_IN) {
+      const k = Math.floor(t);
       this.big.text = String(k + 1);
-      this.big.scale.set(1 + 0.4 * (1 - (beat - k)));
+      this.big.scale.set(1 + 0.4 * (1 - (t - k)));
     } else {
       this.big.text = "";
     }
     this.progress.text = `${this.deltas.length} / ${CAL_NOTES}`;
-    if (beat > CAL_COUNT_IN + CAL_NOTES) this._finish();
+    if (t > CAL_COUNT_IN + CAL_NOTES) this._finish();
   }
 
   _finish() {
@@ -128,18 +161,19 @@ class CalibrateScene {
   onKey(e) {
     const key = e.key.toLowerCase();
     if (e.key === "Escape" || (this.then && key === "s" && !Settings.keys.includes("s"))) return this._done();
+    if (!this.started) return this.ok.onKey(e);
     if (this.finished) return this.menu.onKey(e);
     if (Settings.keys.includes(key) || e.key === " ") this._tap(e);
   }
 
   // Touch: a tap anywhere counts (menu and buttons are Pixi's).
   onTap(e) {
-    if (!this.finished) this._tap(e);
+    if (this.started && !this.finished) this._tap(e);
   }
 
   _tap(e) {
     const beat = Clock.beatOfEvent(e, 0);
-    const n = this.notes[Math.round(beat) - CAL_COUNT_IN];
+    const n = this.notes[Math.round(beat - this.base) - CAL_COUNT_IN];
     if (!n || n.hit) return;
     const deltaBeats = beat - n.beat;
     if (Math.abs(deltaBeats) > 0.4) return; // way off: ignore rather than skew the result

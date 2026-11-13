@@ -116,6 +116,8 @@ const Clock = {
 
 // Start time for `holder` (a synth or voice): Tone throws on two starts at one
 // instant and clamps late times to now, so keep each holder's starts increasing.
+// Late notes go just after now: the audio clock can tick before Tone clamps.
 function nextStart(holder, time) {
-  return (holder._lastStart = Math.max(time, Tone.getContext().currentTime, (holder._lastStart ?? -1) + 0.001));
+  const now = Tone.getContext().currentTime + 0.001;
+  return (holder._lastStart = Math.max(time, now, (holder._lastStart ?? -1) + 0.001));
 }
