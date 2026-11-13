@@ -66,16 +66,16 @@ Rules:
 | `midi-music.js` | Loads `MUSIC` clips (`load`), picks instruments, plays them each half bar (`_bar`), `barNotes` (also the dance chart's source), `playLane` (the player's hits, on their own kit), `playIntro`. |
 | `instruments.js` | The five instruments (`INSTRUMENTS`), CC handling (`cutoffCC`, `sendCC`, `CC_DEFAULTS`), the drum/perc kits (`DRUM_MAP`, `PERC_MAP`). |
 | `drum.js` | `Drum`: sprite poses, squish level, bounce, spin, misses → `DrumStick` strike. |
-| `game/layout.js` | `Layout.state(phase)` (transition choreography: `spread`, `clef`, `bowlUI`, `title`), all geometry (lanes, hit line, pin spots, clef path), `StaffView` drawing. |
+| `game/layout.js` | `Layout.state(phase)` (transition choreography: `spread`, `clef`, `bowlUI`, `title`), all geometry (lanes, hit line, pin spots, clef path, `circleAt` for taps), `StaffView` drawing. |
 | `game/dance.js` | Charts from the dance drums clip (`generateChart`), letters (`makeLetter`, `placeLetter`), judging, holds (`markHoldStarts`, `_insideRun`), misses. |
 | `game/bowling.js` | Aim, throw, ball path with bumpers, precomputed pin physics (`_roll`), strikes, pin count, tempo ramps (`tempoRamp`, `cancelTempoRamps`). `throw` returns the new tempo and its ramp. |
 | `scenes/game.js` | `GameScene`, the conductor: phase changes, the bowling loop (`_scheduleBowlCheck`), throws, squish tempo, `ramps` (every tempo ramp, for the BPM readout), HUD (party clock, BPM, miss bars, count-off), game over. |
-| `scenes/menu.js`, `settings.js`, `pause.js` | `makeText` (text in the game's font), `makeButton` (PAUSE, SKIP, BACK), `Menu` (option/slider list), `Settings` (incl. the calibration offset; kept until the page reloads; key binding), `SettingsPanel`, `AudioPreview`, `PauseMenu`. |
+| `scenes/menu.js`, `settings.js`, `pause.js` | `makeText` (text in the game's font), `makeButton` (PAUSE, SKIP, BACK), `Menu` (option/slider list), `Settings` (incl. the calibration offset; `touch`, set at load from `(pointer: coarse)`; kept until the page reloads; key binding), `SettingsPanel`, `AudioPreview`, `PauseMenu`. |
 | `scenes/title.js`, `comic.js`, `calibrate.js`, `gameover.js` | The other screens. |
-| `input.js` | One `keydown` listener: unlocks audio, `[` / `]` nudge calibration, then `Scenes.current.onKey(e, Clock.beatOfEvent(e))`. |
+| `input.js` | One `keydown` listener: unlocks audio, `[` / `]` nudge calibration, then `Scenes.current.onKey(e, Clock.beatOfEvent(e))`. With `Settings.touch`: `onTap(e, stagePoint, beat)` on pointerdown, `onTapUp(e)` on pointerup/cancel, `onHide()` when the tab is hidden. |
 | `main.js` | Boot order, `Scenes.go`, spritesheet loading, the ticker. |
 
-Every scene has `view`, `enter(data)`, `exit()`, `update()`, `onKey(e, beat)` and optionally `onKeyUp(e)`.
+Every scene has `view`, `enter(data)`, `exit()`, `update()`, `onKey(e, beat)` and optionally `onKeyUp(e)`, `onTap`, `onTapUp`, `onHide`.
 
 ## 5. Recipes
 
@@ -87,7 +87,8 @@ Every scene has `view`, `enter(data)`, `exit()`, `update()`, `onKey(e, beat)` an
 - **Charts:** edit the dance drums clip, or replace `generateChart` (returns `[{beat, lane, state: "pending"}]` on absolute beats).
 - **Choreography:** the numbers in `Layout.state`; line ends in `lineTop`/`lineBottom`.
 - **Scoring:** stray presses → `if (!best) return;` in `DanceMode.press`; bowling results → what `BowlingMode.throw` returns, in `GameScene._throw`.
-- **Controls:** defaults in `CONFIG.LANE_KEYS`; allowed keys in `Settings.bindable`; game keys in `GameScene.onKey`.
+- **Controls:** defaults in `CONFIG.LANE_KEYS`; allowed keys in `Settings.bindable`; game keys in `GameScene.onKey`; taps in `GameScene.onTap` (hit circles via `Layout.circleAt`).
+- **Touch screens:** `Settings.touch` swaps letters for dots (`makeLetter`), the bowl hint (`BOWL_HINT_WORDS_TOUCH`), the calibration hint, and hides CONTROLS. Buttons and menus stay Pixi's; scene taps ignore the PAUSE button.
 - **New scene:** class with the methods above, `<script>` before `input.js`, register in `Scenes.list` (`main.js`).
 - **Sounds:** instruments in `instruments.js`; mix in `MIX`; SFX in `music.js`.
 

@@ -34,7 +34,9 @@ class CalibrateScene {
 
   enter() {
     this.arrowLayer.removeChildren().forEach((c) => c.destroy());
-    this.hint.text = `Tap any of ${Settings.keys.join(" ").toUpperCase()} on every beat, as each letter hits the line   •   Esc to cancel`;
+    this.hint.text = Settings.touch
+      ? `Tap on every beat, as each dot hits the line   •   BACK to cancel`
+      : `Tap any of ${Settings.keys.join(" ").toUpperCase()} on every beat, as each letter hits the line   •   Esc to cancel`;
     this.notes = [];
     for (let i = 0; i < CAL_NOTES; i++) {
       const lane = CAL_LANES[i % CAL_LANES.length];
@@ -104,7 +106,15 @@ class CalibrateScene {
   onKey(e) {
     if (e.key === "Escape") return this._back();
     if (this.doneAt !== null) return;
-    if (!(Settings.keys.includes(e.key.toLowerCase()) || e.key === " ")) return;
+    if (Settings.keys.includes(e.key.toLowerCase()) || e.key === " ") this._tap(e);
+  }
+
+  // Touch: a tap anywhere counts (menu and buttons are Pixi's).
+  onTap(e) {
+    if (this.doneAt === null) this._tap(e);
+  }
+
+  _tap(e) {
     const beat = Clock.beatOfEvent(e, 0);
     const n = this.notes[Math.round(beat) - CAL_COUNT_IN];
     if (!n || n.hit) return;

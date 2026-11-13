@@ -6,6 +6,7 @@ const Settings = {
   volume: { music: 1, sfx: 1 }, // slider positions 0..1, applied by Mixer.setVolume
   keys: [...CONFIG.LANE_KEYS], // dance key per lane, lowercase
   inputOffsetMs: CONFIG.INPUT_OFFSET_MS, // calibration, added to key times
+  touch: matchMedia("(pointer: coarse)").matches, // touch screen, decided at load: tap the circles to dance
 
   setVolume(group, v) {
     this.volume[group] = v;
@@ -78,7 +79,7 @@ class SettingsPanel {
         menu: new Menu([
           { label: () => `DIFFICULTY   ${CONFIG.DIFFICULTIES[Settings.difficulty].name}`, onSelect: () => this.show("difficulty") },
           { label: "AUDIO MIX", onSelect: () => this.show("audio") },
-          { label: "CONTROLS", onSelect: () => this.show("controls") },
+          ...(Settings.touch ? [] : [{ label: "CONTROLS", onSelect: () => this.show("controls") }]),
           back,
         ]),
       },

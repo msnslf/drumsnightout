@@ -72,7 +72,7 @@ class BowlingMode {
     this.banner.anchor.set(0.5);
     this.banner.position.set(CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2);
 
-    this.hints = CONFIG.BOWL_HINT_WORDS.map((word, i) => {
+    this.hints = (Settings.touch ? CONFIG.BOWL_HINT_WORDS_TOUCH : CONFIG.BOWL_HINT_WORDS).map((word, i) => {
       const t = makeText(word, 48, "900");
       t.anchor.set(0.5);
       t.position.set(Layout.lane(i).centerX, (Layout.lanes.top + Layout.lanes.bottom) / 2);

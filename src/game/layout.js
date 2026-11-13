@@ -79,6 +79,10 @@ const Layout = {
   drumX(i) {
     return (CONFIG.WIDTH * (i + 1)) / 5;
   },
+  // Lane whose hit circle contains stage point p, or -1.
+  circleAt(p) {
+    return [0, 1, 2, 3].findIndex((i) => Math.hypot(p.x - this.drumX(i), p.y - this.hitY) <= this.hitRadius + this.hitHalf);
+  },
 
   // ---- clef / pin machine ----
   // Pin spots in lane i, in clef visiting order: back row first, snaking.

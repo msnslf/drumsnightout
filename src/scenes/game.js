@@ -66,6 +66,7 @@ class GameScene {
     this.dance.reset(this.difficulty.windowMs);
     this.bowling.reset();
     this.pause.show(false);
+    this.touches = new Map(); // pointerId -> lane held
 
     Song.reset();
     const startAt = Clock.nextBar(); // if music is playing (intro, game over…), start on its next downbeat
@@ -246,7 +247,33 @@ class GameScene {
       return;
     }
     const lane = Settings.keys.indexOf(e.key.toLowerCase());
-    if (lane >= 0 && phase.name !== "toBowl" && phase.name !== "toDance") this.dance.press(lane, beat, phase); // no drum input in transitions
+    if (lane >= 0) this._press(lane, beat, phase);
+  }
+
+  _press(lane, beat, phase) {
+    if (phase.name !== "toBowl" && phase.name !== "toDance") this.dance.press(lane, beat, phase); // no drum input in transitions
+  }
+
+  // Touch: tap a hit circle to dance, anywhere (but PAUSE) to bowl.
+  onTap(e, p, beat) {
+    const b = this.pause.button;
+    if (this.ending || Clock.paused || (p.x >= b.x && p.x <= b.x + b.width && p.y >= b.y && p.y <= b.y + b.height)) return;
+    const phase = Song.phaseAt(beat);
+    if (phase.name === "bowl") return this._throw(beat);
+    const lane = Layout.circleAt(p);
+    if (lane < 0) return;
+    this.touches.set(e.pointerId, lane);
+    this._press(lane, beat, phase);
+  }
+
+  onTapUp(e) {
+    const lane = this.touches.get(e.pointerId);
+    this.touches.delete(e.pointerId);
+    if (lane !== undefined) this.dance.release(lane);
+  }
+
+  onHide() {
+    if (!Clock.paused && !this.ending) this.pause.toggle();
   }
 
   onKeyUp(e) {

@@ -51,6 +51,7 @@ const CONFIG = {
 
   // --- Bowling ---
   BOWL_HINT_WORDS: ["bowl", "with", "any", "key"], // round 1 only: one per lane, one per beat, on the second bowling bar
+  BOWL_HINT_WORDS_TOUCH: ["bowl", "with", "a", "tap"],
   AIM_PERIOD_BEATS: 4, // one full back-and-forth of the aim arrow
   AIM_MAX_ANGLE: 0.6, // radians
   AIM_DIVERGENCE_PER_ROUND: 0.13, // radians of phase offset added between lanes each round

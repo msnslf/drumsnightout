@@ -35,8 +35,9 @@ function makeHoldLabel() {
   return t;
 }
 
-// The lane's key letter, drawn at hit-line size so shrinking keeps it sharp.
+// The lane's key letter (a dot on touch screens), drawn at hit-line size so shrinking keeps it sharp.
 function makeLetter(lane) {
+  if (Settings.touch) return new PIXI.Graphics().circle(0, 0, 12 * CONFIG.HIT_CUE_SCALE).fill(CONFIG.INK);
   const t = makeText(Settings.keys[lane].toUpperCase(), 34 * CONFIG.HIT_CUE_SCALE, "900");
   t.anchor.set(0.5);
   return t;
@@ -74,6 +75,7 @@ class DanceMode {
 
   // Shows the current key bindings on letters already made.
   relabel() {
+    if (Settings.touch) return;
     for (const notes of this.charts.values()) for (const n of notes) if (n.view) n.view.text = Settings.keys[n.lane].toUpperCase();
   }
 
