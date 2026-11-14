@@ -57,7 +57,7 @@ const CONFIG = {
   AIM_MAX_ANGLE: 0.6, // radians
   AIM_DIVERGENCE_PER_ROUND: 0.18, // radians of phase offset added between lanes each round
   ROLL_BEATS: 2, // ball always takes exactly this long to reach the end of the lane
-  BALL_SIZES: [0.35, 0.25, 0.15, 0.05, 0.01, 0.005, 0.001], // ball radius per round, as a fraction of lane width; the last repeats
+  BALL_SIZES: [0.35, 0.25, 0.15, 0.05, 0.01], // ball radius per round, as a fraction of lane width; the last repeats
   BPM_PER_STANDING_PIN: 0.4, 
 
   // --- Look ---
