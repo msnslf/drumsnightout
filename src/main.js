@@ -80,4 +80,12 @@ async function main() {
   });
 }
 
-main();
+// If startup fails (e.g. Web Audio blocked), say so on screen instead of a blank page.
+main().catch((error) => {
+  console.error(error);
+  const box = document.body.appendChild(document.createElement("div"));
+  box.id = "error";
+  for (const line of ["Sorry, the game couldn't start in this browser.", "Privacy settings or extensions that block Web Audio can cause this."])
+    box.appendChild(document.createElement("p")).textContent = line;
+  box.appendChild(document.createElement("code")).textContent = String(error?.stack || error).split("\n").slice(0, 3).join("\n");
+});
