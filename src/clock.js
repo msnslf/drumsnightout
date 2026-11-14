@@ -8,9 +8,11 @@ const Clock = {
   _lastBeat: 0,
 
   init() {
-    // Own native context (for output timestamps); make Tone nodes after this.
-    this.ctx = new AudioContext({ latencyHint: "interactive" });
-    Tone.setContext(this.ctx);
+    // Tone makes the context (its cross-browser path; Firefox can reject a plain one).
+    // Output timestamps come from the browser's own context inside it. Make Tone nodes after this.
+    Tone.setContext(new Tone.Context({ latencyHint: "interactive" }));
+    const raw = Tone.getContext().rawContext;
+    this.ctx = raw._nativeContext ?? raw;
     this.transport = Tone.getTransport();
     this.transport.timeSignature = CONFIG.BEATS_PER_BAR;
   },

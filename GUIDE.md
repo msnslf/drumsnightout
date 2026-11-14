@@ -59,7 +59,7 @@ Rules:
 | File | What's there |
 |---|---|
 | `config.js` | Every tunable number (`CONFIG`) and the MIDI clip list (`MUSIC`). |
-| `clock.js` | The music clock (section 3). Creates its own `AudioContext`, so all Tone nodes come after `Clock.init()`. `nextStart(holder, time)` keeps a synth's start times increasing. |
+| `clock.js` | The music clock (section 3). `Clock.init()` sets up Tone's context (Firefox-safe) and reads output timestamps from the browser context inside it (`Clock.ctx`), so all Tone nodes come after it. `nextStart(holder, time)` keeps a synth's start times increasing. |
 | `song.js` | `Song.phaseAt(beat)` → `{name, cycle, startBeat, endBeat, progress}`; `phaseStart`, `phaseBeats`; `extendBowl` (the bowling loop); `clamp01`, `ease`, `lerp`. |
 | `mixer.js` | `MIX` levels (dB) and the routing: instrument channels → `drums` / `nodrums` → `all` (compressed, ducked by `sfx`) → music volume → lowpass/fade → master → 150 Hz low cut → limiter. Reverb and delay→distortion sends on every channel. `Mixer.in[name]` is what sounds connect to; `setVolume` (player sliders), `setSendCC` (CC send scaling), `setDuck` (the dance sidechain, `nodrums`, deepens by `DUCK_DB_PER_ROUND` each round), `lowpassSweep`/`fadeOut`/`unfade` (game over). |
 | `music.js` | SFX and the calibration metronome. Bowling cues (`cue(name, time, voice)`) are placeholder synths named after their future samples; voice lines (`vo_strike`, `vo_multistrike`) load numbered takes from `assets/sfx/`. |
