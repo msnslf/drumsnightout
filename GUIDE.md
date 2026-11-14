@@ -63,7 +63,7 @@ Rules:
 | `song.js` | `Song.phaseAt(beat)` → `{name, cycle, startBeat, endBeat, progress}`; `phaseStart`, `phaseBeats`; `extendBowl` (the bowling loop); `clamp01`, `ease`, `lerp`. |
 | `mixer.js` | `MIX` levels (dB) and the routing: instrument channels → `drums` / `nodrums` → `all` (compressed, ducked by `sfx`) → music volume → lowpass/fade → master → 150 Hz low cut → limiter. Reverb and delay→distortion sends on every channel. `Mixer.in[name]` is what sounds connect to; `setVolume` (player sliders), `setSendCC` (CC send scaling), `setDuck` (the dance sidechain, `nodrums`, deepens by `DUCK_DB_PER_ROUND` each round), `lowpassSweep`/`fadeOut`/`unfade` (game over). |
 | `music.js` | SFX and the calibration metronome. Bowling cues (`cue(name, time, voice)`) are placeholder synths named after their future samples; voice lines (`vo_strike`, `vo_multistrike`) load numbered takes from `assets/sfx/`. |
-| `midi-music.js` | Loads `MUSIC` clips (`load`), picks instruments, plays them each half bar (`_bar`), `barNotes` (also the dance chart's source), `playLane` (the player's hits, on their own kit), `playIntro`. |
+| `midi-music.js` | Loads every `MUSIC` clip at once (`load`), picks instruments, plays them each half bar (`_bar`), `barNotes` (also the dance chart's source), `playLane` (the player's hits, on their own kit), `playIntro`. |
 | `instruments.js` | The five instruments (`INSTRUMENTS`), CC handling (`cutoffCC`, `sendCC`, `CC_DEFAULTS`), the drum/perc kits (`DRUM_MAP`, `PERC_MAP`). |
 | `drum.js` | `Drum`: sprite poses, squish level, bounce, spin, misses → `DrumStick` strike. |
 | `game/layout.js` | `Layout.state(phase)` (transition choreography: `spread`, `clef` (the invisible pin machine's route; pins drop as it passes), `bowlUI`), all geometry (lanes, hit line, pin spots, clef path, `circleAt` for taps), `StaffView` drawing. |
@@ -73,7 +73,7 @@ Rules:
 | `scenes/menu.js`, `settings.js`, `pause.js` | `makeText` (text in the game's font), `makeButton` (PAUSE, BACK), `Menu` (option/slider list), `Settings` (incl. the calibration offset; `touch`, set at load from `(pointer: coarse)`; kept until the page reloads; key binding), `SettingsPanel`, `AudioPreview`, `PauseMenu`. |
 | `scenes/title.js`, `calibrate.js`, `gameover.js` | The other screens. |
 | `input.js` | One `keydown` listener: unlocks audio, `[` / `]` nudge calibration, then `Scenes.current.onKey(e, Clock.beatOfEvent(e))`. With `Settings.touch`: `onTap(e, stagePoint, beat)` on pointerdown, `onTapUp(e)` on pointerup/cancel, `onHide()` when the tab is hidden. |
-| `main.js` | Boot order, `Scenes.go`, spritesheet loading, the ticker. |
+| `main.js` | Boot (audio and images load in parallel), `Scenes.go`, spritesheet loading, the ticker. |
 
 Every scene has `view`, `enter(data)`, `exit()`, `update()`, `onKey(e, beat)` and optionally `onKeyUp(e)`, `onTap`, `onTapUp`, `onHide`.
 
@@ -109,11 +109,11 @@ The music is cut into sections matching the game: **intro** (title, settings, fi
    | `toDance` | 2 bars | 2 bars |
 
    Lengths come from `CONFIG.PHASES`.
-3. Save into `assets/music/` with the names in `MUSIC` (`config.js`) and refresh.
+3. Save into `assets/music/`, list the files under their section and round in `MUSIC` (`config.js`), and refresh. On a local `http://` server clips are always re-fetched (`?t=`), so re-exports show up at once; online they're cached.
 
-- **Layers:** a section can list several files; they play together and **each loops at its own length** (keep lengths like 1, 2, 4, 8, 16 so they realign). Longer layers carry on next round.
+- **Layers:** a round can list several files; they play together and **each loops at its own length** (keep lengths like 1, 2, 4, 8, 16 so they realign). Longer layers carry on next round.
 - **Clip length** comes from the DAW's end-of-clip marker, or the last note. Force it with `{ file: "x.mid", bars: 4 }`.
-- **Versions per round:** `dance2-….mid`, `dance3-….mid`… are rounds 2, 3…; round 1 is `dance1-….mid` or the plain name. After the last number it wraps to round 1.
+- **Versions per round:** each section in `MUSIC` is a list of rounds, each a list of files (`dance: [[round 1 files], [round 2 files], …]`). After the last round it wraps to the first. File names are free, but ending them in `-instrument.mid` picks the instrument.
 
 ### Which instrument plays a track
 Five instruments: **drums**, **perc**, **bass**, **melody**, **chords**. In order:

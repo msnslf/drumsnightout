@@ -21,13 +21,8 @@ async function main() {
   Clock.init();
   Mixer.init();
   Music.init();
-  await Music.loadSamples();
-
-  try {
-    await MidiMusic.load();
-  } catch (error) {
-    console.error("MIDI loading failed:", error);
-  }
+  // Audio and images all load at once.
+  const audio = Promise.all([Music.loadSamples(), MidiMusic.load().catch((error) => console.error("MIDI loading failed:", error))]);
 
   const root = document.getElementById("game");
   const app = new PIXI.Application();
@@ -52,29 +47,31 @@ async function main() {
   fit();
   app.renderer.on("resize", fit);
 
+  const drumSheet = async (i, atlas) => {
+    const sheet = new PIXI.Spritesheet({ texture: await PIXI.Assets.load(`assets/drums/drum${i}.png`), data: await atlas, cachePrefix: `drum${i}:` });
+    await sheet.parse();
+    return sheet;
+  };
+  const atlas = fetch("assets/drums/drum.json").then((r) => r.json()); // shared by every drum's PNG
+  const [drums, background, marquee, pins] = await Promise.all([
+    Promise.all([0, 1, 2, 3].map((i) => drumSheet(i, atlas))),
+    PIXI.Assets.load("assets/environment/startpagebackground.png"),
+    PIXI.Assets.load("assets/environment/marquee_sign.png"),
+    PIXI.Assets.load("assets/environment/bowlingpin.json").catch(() => null),
+    audio,
+  ]);
+
   Scenes.list = {
     title: new TitleScene(),
     game: new GameScene(),
     calibrate: new CalibrateScene(),
   };
   Input.init();
-
-  const atlas = await (await fetch("assets/drums/drum.json")).json(); // shared by every drum's PNG
-  for (const [i, drum] of Scenes.list.game.drums.entries()) {
-    const texture = await PIXI.Assets.load(`assets/drums/drum${i}.png`);
-    const sheet = new PIXI.Spritesheet({ texture, data: atlas, cachePrefix: `drum${i}:` });
-    await sheet.parse();
-    drum.useSpritesheet(sheet);
-  }
-
-  Scenes.list.title.useBackground(await PIXI.Assets.load("assets/environment/startpagebackground.png"));
-  Scenes.list.game.useMarquee(await PIXI.Assets.load("assets/environment/marquee_sign.png"));
-
-  try {
-    Scenes.list.game.bowling.useSpritesheet(await PIXI.Assets.load("assets/environment/bowlingpin.json"));
-  } catch {
-    console.log("No pin spritesheet yet (assets/environment/bowlingpin.json), using placeholder pins");
-  }
+  Scenes.list.game.drums.forEach((drum, i) => drum.useSpritesheet(drums[i]));
+  Scenes.list.title.useBackground(background);
+  Scenes.list.game.useMarquee(marquee);
+  if (pins) Scenes.list.game.bowling.useSpritesheet(pins);
+  else console.log("No pin spritesheet yet (assets/environment/bowlingpin.json), using placeholder pins");
 
   Scenes.go("title");
   app.ticker.add(() => {

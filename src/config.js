@@ -73,14 +73,29 @@ const CONFIG = {
 // MIDI clips per section: file, [files] or { file, instrument, bars }.
 const MUSIC = {
   folder: "assets/music/",
+  // Per section, a list of rounds; each round lists its files (layered). Rounds repeat from the first after the last.
+  // A file can also be { file, instrument, bars }. Missing files are skipped (see the console).
   clips: {
-    intro: ["intro-drums.mid", "intro-perc.mid", "intro-bass.mid", "intro-chords.mid", "intro-melody.mid"], // title screen and calibration
-   
-    countoff: "countoff.mid", // the count-off bars before the first dance
-    dance: ["dance-bass.mid", "dance-chords.mid", "dance-drums.mid", "dance-melody.mid", "dance-perc.mid"],
-    toBowl: ["toBowl-bass.mid", "toBowl-chords.mid", "toBowl-drums.mid", "toBowl-melody.mid", "toBowl-perc.mid"],
-    bowl: ["bowl-bass.mid", "bowl-chords.mid", "bowl-drums.mid", "bowl-melody.mid", "bowl-perc.mid"],
-    toDance: ["toDance-drums.mid", "toDance-melody.mid", "toDance-perc.mid"],
+    intro: [["intro-bass.mid", "intro-chords.mid", "intro-perc.mid"]], // title screen and calibration
+    countoff: [["countoff.mid"]], // the count-off bars before the first dance
+    dance: [
+      ["dance1-bass.mid", "dance1-chords.mid", "dance1-drums.mid", "dance1-melody.mid", "dance1-perc.mid"],
+      ["dance2-bass.mid", "dance2-chords.mid", "dance2-drums.mid", "dance2-melody.mid", "dance2-perc.mid"],
+      ["dance3-bass.mid", "dance3-chords.mid", "dance3-drums.mid", "dance3-melody.mid", "dance3-perc.mid"],
+      ["dance4-bass.mid", "dance4-drums.mid", "dance4-melody.mid", "dance4-perc.mid"],
+    ],
+    toBowl: [
+      ["toBowl1-bass.mid", "toBowl1-drums.mid", "toBowl1-perc.mid"],
+      ["toBowl2-bass.mid", "toBowl2-chords.mid", "toBowl2-drums.mid", "toBowl2-melody.mid", "toBowl2-perc.mid"],
+    ],
+    bowl: [
+      ["bowl1-bass.mid", "bowl1-chords.mid", "bowl1-drums.mid", "bowl1-melody.mid", "bowl1-perc.mid"],
+      ["bowl2-bass.mid", "bowl2-chords.mid", "bowl2-melody.mid", "bowl2-perc.mid"],
+    ],
+    toDance: [
+      ["toDance1-melody.mid", "toDance1-perc.mid"],
+      ["toDance2-melody.mid", "toDance2-perc.mid"],
+    ],
   },
 };
 CONFIG.MUSIC = MUSIC;

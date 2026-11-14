@@ -104,27 +104,22 @@ const Music = {
     this.cueStops = { sfx_ballRoll: (time, voice) => rolls[voice].triggerRelease(time) };
   },
   // `voice` picks one of a cue's synths when it overlaps itself (ballRoll).
-  // Voice line takes: assets/sfx/strike1.wav, strike2.wav… up to a gap.
+  // Voice line takes: assets/sfx/strike1.wav, strike2.wav… up to a gap (8 max).
   voices: { strike: [], multistrike: [] },
   samples: { "bowling-miss": null }, // single files: assets/sfx/<name>.wav
   async loadSamples() {
-    for (const name of Object.keys(this.samples)) {
-      try {
-        this.samples[name] = await Tone.ToneAudioBuffer.fromUrl(`assets/sfx/${name}.wav`);
-      } catch {
-        console.warn(`♪ assets/sfx/${name}.wav not loaded`);
-      }
-    }
-    for (const name of Object.keys(this.voices)) {
-      for (let n = 1; ; n++) {
-        try {
-          this.voices[name].push(await Tone.ToneAudioBuffer.fromUrl(`assets/sfx/${name}${n}.wav`));
-        } catch {
-          break;
-        }
-      }
-      console.log(`♪ ${name}: ${this.voices[name].length} variation(s)`);
-    }
+    const load = (name) => Tone.ToneAudioBuffer.fromUrl(`assets/sfx/${name}.wav`).catch(() => null);
+    await Promise.all([
+      ...Object.keys(this.samples).map(async (name) => {
+        if (!(this.samples[name] = await load(name))) console.warn(`♪ assets/sfx/${name}.wav not loaded`);
+      }),
+      ...Object.keys(this.voices).map(async (name) => {
+        const takes = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8].map((n) => load(name + n))); // probed together
+        const gap = takes.indexOf(null);
+        this.voices[name] = gap < 0 ? takes : takes.slice(0, gap);
+        console.log(`♪ ${name}: ${this.voices[name].length} variation(s)`);
+      }),
+    ]);
   },
   // Reverse cymbal ending at `end`, starting partway in if it doesn't fit.
   revCymbal(time, end) {

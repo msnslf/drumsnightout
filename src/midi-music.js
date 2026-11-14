@@ -8,23 +8,20 @@ const MidiMusic = {
   autoLanes: false, // play dance lane notes too (game over: nobody's playing them)
 
   async load() {
-    const folder = MUSIC.folder;
-    for (const [section, spec] of Object.entries(MUSIC.clips)) {
-      const files = [].concat(spec || []).map((f) => (typeof f === "string" ? { file: f } : f));
-      const versions = [];
-      // Round v: dance-x.mid -> dancev-x.mid, until a number has no files.
-      for (let v = 1; ; v++) {
-        const parts = [];
-        for (const f of files) {
-          const numbered = f.file.replace(new RegExp(`^${section}(?=\\W)`), section + v);
-          if (v > 1 && numbered === f.file) continue;
-          const file = await this._firstLoaded(folder, v === 1 ? [numbered, f.file] : [numbered]); // round 1 also accepts the plain name
-          if (file) parts.push({ spec: { ...f, file: file.name }, midi: file.midi });
-          else if (v === 1) this.missing.push(f.file);
-        }
-        if (!parts.length) break;
-        versions.push(parts.map((p) => this._buildLayer(p)));
+    const bust = location.protocol === "http:" ? `?t=${Date.now()}` : ""; // local server: always the latest export
+    const fetchOne = async (f) => {
+      const spec = typeof f === "string" ? { file: f } : f;
+      try {
+        return { spec, midi: await Midi.fromUrl(MUSIC.folder + spec.file + bust) };
+      } catch {
+        this.missing.push(spec.file);
       }
+    };
+    // Every file at once; layers are built afterwards in config order.
+    const loaded = await Promise.all(Object.entries(MUSIC.clips).map(async ([section, rounds]) =>
+      [section, await Promise.all(rounds.map((files) => Promise.all([].concat(files).map(fetchOne))))]));
+    for (const [section, rounds] of loaded) {
+      const versions = rounds.map((parts) => parts.filter(Boolean)).filter((parts) => parts.length).map((parts) => parts.map((p) => this._buildLayer(p)));
       if (versions.length) this.clips[section] = versions;
     }
     this.playerKit = INSTRUMENTS.drums(Mixer.in.drums); // own voices, so the player never collides with notes the music booked ahead
@@ -36,16 +33,6 @@ const MidiMusic = {
     }
     if (this.missing.length) console.warn(`♪ not loaded (those sections will be silent): ${this.missing.join(", ")}`);
     if (this.needsServer) console.warn("♪ MIDI files can't be loaded from a page opened from disk. Run a local server (see README).");
-  },
-
-  async _firstLoaded(folder, names) {
-    for (const name of new Set(names)) {
-      try {
-        // ?t= skips the cache, so a refresh picks up your latest export.
-        return { name, midi: await Midi.fromUrl(`${folder}${name}?t=${Date.now()}`) };
-      } catch (e) {}
-    }
-    return null;
   },
 
   // One parsed MIDI file -> a layer: notes grouped by bar, in beats.
