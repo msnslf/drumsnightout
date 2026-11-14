@@ -39,15 +39,15 @@ const Layout = {
     const lin = (a, z) => clamp01((b - a) / (z - a));
     switch (phase.name) {
       case "toBowl":
-        return { spread: seg(0, 1.5), clef: lin(1.5, 3), bowlUI: seg(3, 4), title: lin(3, 4) };
+        return { spread: seg(0, 1.5), clef: lin(1.5, 3), bowlUI: seg(3, 4) };
       case "bowl":
-        return { spread: 1, clef: 1, bowlUI: 1, title: 1 };
+        return { spread: 1, clef: 1, bowlUI: 1 };
       case "toDance": {
         const spread = 1 - seg(1.25, 2.5);
-        return { spread, clef: 0, bowlUI: 1 - seg(1, 1.75), title: spread >= 0.5 ? 1 : 0 };
+        return { spread, clef: 0, bowlUI: 1 - seg(1, 1.75) };
       }
       default: // countoff, dance
-        return { spread: 0, clef: 0, bowlUI: 0, title: 0 };
+        return { spread: 0, clef: 0, bowlUI: 0 };
     }
   },
 
@@ -101,11 +101,6 @@ const Layout = {
     const home = { x: this.danceTop.x, y: this.clefHomeY };
     return [home, ...[0, 1, 2, 3].flatMap((i) => this.pins(i)), home];
   },
-  clefPos(st) {
-    const path = this.clefPath, u = st.clef * (path.length - 1);
-    const k = Math.min(Math.floor(u), path.length - 2), t = u - k;
-    return { x: lerp(path[k].x, path[k + 1].x, t), y: lerp(path[k].y, path[k + 1].y, t) };
-  },
   // 0..1: how far the pin with this `order` has been deposited.
   pinDrop(order, st) {
     const legs = this.clefPath.length - 1;
@@ -113,7 +108,7 @@ const Layout = {
   },
 };
 
-// Draws the lines, the hit line and the clef (which is also the pin machine).
+// Draws the lines and the hit line.
 class StaffView {
   constructor() {
     this.gfx = new PIXI.Graphics();
@@ -151,9 +146,5 @@ class StaffView {
         g.stroke({ width: 2, color: ink, alpha: 0.2 * (1 - st.spread) });
       }
     }
-    // Percussion clef: two thick bars, wherever the pin machine has got to.
-    const c = Layout.clefPos(st);
-    g.rect(c.x - 10, c.y - 19, 7, 38).fill(ink);
-    g.rect(c.x + 3, c.y - 19, 7, 38).fill(ink);
   }
 }

@@ -1,6 +1,7 @@
 // Bowling: aims swing with the beat; any key throws, one lane per half note.
 
-const PIN_RADIUS = 9;
+const PIN_RADIUS = 9; // placeholder art; scaled by PIN_SCALE
+const PIN_SCALE = 0.7; // pin size: art and hits
 const PIN_FRAME_PX = 12; // distance a fallen pin travels per frame of its rolling animation
 const PIN_MAX_SPIN = 0.05; // max radians a fallen pin turns per pixel it travels
 const PIN_STOP_BEATS = 1.5, PIN_DECAY = 4; // a knocked pin's speed decays (rate PIN_DECAY) to 0 at PIN_STOP_BEATS
@@ -8,7 +9,7 @@ const PIN_FADE_BEATS = 2; // a stopped pin fades out over this long
 const COUNT_STEP = 1 / 6; // beats between pin-count numbers
 const COUNT_MOVE_BEATS = 2; // beats the total takes to slide under the tempo
 const BPM_STEP = 0.1, BPM_STEPS_PER_BEAT = 16;
-const PIN_ANIMS = { standing: 1, fallen: 4 }; // spritesheet animation -> frame count
+const PIN_ANIMS = { standing: 1, fallen: 3 }; // spritesheet animation -> frame count
 
 // Speed (1 -> 0) and distance factors of a pin `t` beats after its hit.
 function pinSlow(t) {
@@ -97,7 +98,7 @@ class BowlingMode {
     this.countView.removeChildren().forEach((c) => c.destroy());
   }
 
-  // Swap in a pin sheet: `standing` (1 frame) and `fallen` (4 frames).
+  // Swap in a pin sheet: `standing` (1 frame) and `fallen` (3 frames).
   useSpritesheet(sheet) {
     for (const [name, n] of Object.entries(PIN_ANIMS)) {
       if (sheet.animations[name]?.length !== n) throw new Error(`Pin spritesheet needs "${name}" with ${n} frame(s).`);
@@ -124,7 +125,7 @@ class BowlingMode {
   prepare(round) {
     this.reset();
     this.round = round;
-    const ballFrac = Math.max(CONFIG.BALL_MIN_FRAC, CONFIG.BALL_START_FRAC - round * CONFIG.BALL_SHRINK_PER_ROUND);
+    const ballFrac = CONFIG.BALL_SIZES[Math.min(round, CONFIG.BALL_SIZES.length - 1)];
     this.lanes = [0, 1, 2, 3].map((i) => {
       const lane = Layout.lane(i);
       const r = lane.width * ballFrac;
@@ -213,13 +214,13 @@ class BowlingMode {
       if (!ball && moving.every((m) => b - m.knockBeat > PIN_STOP_BEATS)) break;
       for (const pin of L.pins) {
         if (pin.knockBeat < Infinity) continue;
-        if (ball && Math.hypot(pin.x - ball.x, pin.y - ball.y) < L.r + PIN_RADIUS) {
+        if (ball && Math.hypot(pin.x - ball.x, pin.y - ball.y) < L.r + PIN_RADIUS * PIN_SCALE) {
           knock(pin, b, ball, ballSpeed);
           continue;
         }
         for (const m of moving) {
           const t = b - m.knockBeat, at = pinPos(m, t);
-          if (t > 0 && pinSpeed(m, t) > 0 && Math.hypot(pin.x - at.x, pin.y - at.y) < 2 * PIN_RADIUS) {
+          if (t > 0 && pinSpeed(m, t) > 0 && Math.hypot(pin.x - at.x, pin.y - at.y) < 2 * PIN_RADIUS * PIN_SCALE) {
             knock(pin, b, at, pinSpeed(m, t));
             break;
           }
@@ -285,7 +286,7 @@ class BowlingMode {
         const k = beat - pin.knockBeat; // beats since knocked
         s.visible = drop > 0 && k <= PIN_STOP_BEATS + PIN_FADE_BEATS && beat < pin.countBeat; // replaced by its number when counted
         if (!s.visible) continue;
-        s.scale.set(1 + (1 - drop) * 0.6); // falls from slightly above
+        s.scale.set(PIN_SCALE * (1 + (1 - drop) * 0.6)); // falls from slightly above
         s.alpha = leaving ? st.bowlUI : drop;
         if (k > 0) {
           const at = pinPos(pin, k), dist = Math.hypot(pin.vx, pin.vy) * pinSlow(k).dist;

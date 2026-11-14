@@ -4,13 +4,10 @@ class TitleScene {
   constructor() {
     this.view = new PIXI.Container();
     this.main = this.view.addChild(new PIXI.Container());
-    const title = this.main.addChild(makeText("DRUMS' NIGHT OUT", 100, "900"));
-    title.anchor.set(0.5);
-    title.position.set(CONFIG.WIDTH / 2, 190);
     this.menu = new Menu([
-      { label: "PLAY", onSelect: () => (Settings.calibrated ? Scenes.go("comic") : Scenes.go("calibrate", { then: "comic" })) },
+      { label: "PLAY", onSelect: () => (Settings.calibrated ? Scenes.go("game") : Scenes.go("calibrate", { then: "game" })) },
       { label: "SETTINGS", onSelect: () => this.showSettings("main") },
-    ], { y: 400, gap: 85, size: 48 });
+    ], { x: CONFIG.WIDTH - 150, y: CONFIG.HEIGHT - 160, gap: 85, size: 48, color: 0xffffff });
     this.main.addChild(this.menu.view);
 
     this.settings = new SettingsPanel({ onBack: () => this.showSettings(null) });
@@ -21,6 +18,11 @@ class TitleScene {
       note.anchor.set(0.5);
       note.position.set(CONFIG.WIDTH / 2, 680);
     }
+  }
+
+  // Full-screen art behind the title menu (not behind settings).
+  useBackground(texture) {
+    this.main.addChildAt(new PIXI.Sprite(texture), 0);
   }
 
   // data.page opens that settings page (calibration returns to difficulty).

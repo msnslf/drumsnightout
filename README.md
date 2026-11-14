@@ -12,8 +12,7 @@ To play on a phone, open `http://<your Mac's local IP>:8000` on the same Wi-Fi.
 
 ## Play
 
-- **Menus:** arrow keys + Enter, or the mouse. Title: PLAY (comic, then the game) or SETTINGS (difficulty, starting tempo, calibration, music/sfx volume, dance keys; reset when the page reloads).
-- **Comic:** any key or click turns the page; SKIP, S or Esc starts the game.
+- **Menus:** arrow keys + Enter, or the mouse. Title: PLAY (calibration the first time, then the game) or SETTINGS (difficulty, starting tempo, calibration, music/sfx volume, dance keys; reset when the page reloads).
 - **Dance:** D F J K, one per lane (rebind in SETTINGS → CONTROLS). Hold a key through a run of notes.
 - **Bowl:** any key freezes all four aims; the drums bowl one per half note. Standing pins raise the tempo.
 - **Touch screens** (detected at load): tap a hit circle to dance (hold a finger through a run), tap anywhere to bowl. Dots replace the key letters and CONTROLS is hidden.
@@ -23,11 +22,3 @@ To play on a phone, open `http://<your Mac's local IP>:8000` on the same Wi-Fi.
 ## Changing things
 
 Start with [`GUIDE.md`](GUIDE.md): where everything lives, the timing rule, recipes, and how to export music from your DAW (section 6) and add art (section 5).
-
-## Open TODOs / TBDs
-
-- Squishes to pancake (3), BPM per standing pin (0.4), ball shrink rate: all in `config.js`
-- Stray key presses during dancing aren't penalised yet
-- Instruments are simple synths; swap in samples (`Tone.Sampler`, see `src/instruments.js`)
-- Comic panels have no art yet
-- Bowling sounds (`sfx_*`) are placeholder synths in `src/music.js`; the strike voice lines are samples in `assets/sfx/`

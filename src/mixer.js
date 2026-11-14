@@ -6,7 +6,7 @@ const MIX = {
   bass: { gain: 8, reverb: -60, distortion: -60 },
   chords: { gain: 7, reverb: -3, distortion: -12, pan: -1 },
   melody: { gain: 0, reverb: -3, distortion: -12, pan: 1 },
-  nodrums: { gain: 0, reverb: -60, distortion: -60, duck: 17 },
+  nodrums: { gain: 0, reverb: -60, distortion: -60, duck: 16 },
   all: { gain: 0, reverb: -60, distortion: -60, duck: 0, threshold: -17 },
   sfx: { gain: 0, reverb: -60, distortion: -60 },
   banter: { gain: -3, reverb: -60, distortion: -60 },
@@ -23,6 +23,7 @@ const Mixer = {
   sendCC: {}, // name -> { send key -> 0..1 } scaling from MIDI CC (see setSendCC)
   in: {}, // name -> node instruments connect to
   user: {}, // music/sfx -> Tone.Volume set by the settings sliders (banter uses sfx)
+  ducks: {}, // name -> Tone.Multiply on its ducking envelope (setDuck)
 
   init() {
     // Called once, after Clock.init(), so every node uses our AudioContext.
@@ -108,10 +109,15 @@ const Mixer = {
     this.sends[name] = { reverb: c.send("reverb", MIX[name].reverb), distortion: c.send("distortion", MIX[name].distortion) };
   },
 
+  // Sets how deep `name` is ducked (dB, like MIX[name].duck).
+  setDuck(name, db) {
+    this.ducks[name].factor.value = Tone.dbToGain(db);
+  },
+
   // Gain in front of `name` that dips with `source`'s envelope (x duck).
   _duck(name, source) {
     const gain = new Tone.Gain().connect(this.channels[name]);
-    const amount = new Tone.Multiply(Tone.dbToGain(MIX[name].duck));
+    const amount = (this.ducks[name] = new Tone.Multiply(Tone.dbToGain(MIX[name].duck)));
     const dip = new Tone.WaveShaper((x) => 1 - Math.min(Math.max(x, 0), 1));
     source.chain(new Tone.Follower(0.1), amount, dip);
     dip.connect(gain.gain); // a signal connected to a param replaces its value

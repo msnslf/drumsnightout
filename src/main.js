@@ -54,7 +54,6 @@ async function main() {
 
   Scenes.list = {
     title: new TitleScene(),
-    comic: new ComicScene(),
     game: new GameScene(),
     calibrate: new CalibrateScene(),
   };
@@ -68,10 +67,13 @@ async function main() {
     drum.useSpritesheet(sheet);
   }
 
+  Scenes.list.title.useBackground(await PIXI.Assets.load("assets/environment/startpagebackground.png"));
+  Scenes.list.game.useMarquee(await PIXI.Assets.load("assets/environment/marquee_sign.png"));
+
   try {
-    Scenes.list.game.bowling.useSpritesheet(await PIXI.Assets.load("assets/pins/pin.json"));
+    Scenes.list.game.bowling.useSpritesheet(await PIXI.Assets.load("assets/environment/bowlingpin.json"));
   } catch {
-    console.log("No pin spritesheet yet (assets/pins/pin.json), using placeholder pins");
+    console.log("No pin spritesheet yet (assets/environment/bowlingpin.json), using placeholder pins");
   }
 
   Scenes.go("title");

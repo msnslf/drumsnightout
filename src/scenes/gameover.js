@@ -6,8 +6,8 @@ class GameOverPanel {
   constructor() {
     this.view = new PIXI.Container();
     const center = { align: "center" };
-    const x = CONFIG.WIDTH * 0.28;
-    this.title = makeText("PANCAKES!", 96, "900", center);
+    const x = CONFIG.WIDTH * 0.28 + 25;
+    this.title = makeText("MULTISTRUCK!", 96, "900", center);
     this.title.anchor.set(0.5);
     this.title.position.set(x, 190);
     this.sub = makeText("", 30, "900", center);
@@ -19,7 +19,7 @@ class GameOverPanel {
   }
 
   show(time, bpm) {
-    this.sub.text = `At least breakfast is sorted.\nPartied until ${time}\nFinal tempo: ${bpm.toFixed(1)} bpm`;
+    this.sub.text = `Time to go home...\nPartied until ${time}\nFinal tempo: ${bpm.toFixed(1)} bpm`;
     this.shownAt = performance.now();
     this.view.visible = true;
   }

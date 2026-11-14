@@ -58,7 +58,7 @@ class CalibrateScene {
     this.view.addChild(this.title, this.hint, this.big, this.progress, this.result, this.detail, this.menu.view, this.info, this.back, this.skip);
   }
 
-  // then: scene to go to when done (first PLAY: "comic"); else the title's difficulty page.
+  // then: scene to go to when done (first PLAY: "game"); else the title's difficulty page.
   // ready: skip the instructions overlay (RECALIBRATE).
   enter({ then, ready }) {
     Settings.calibrated = true;
@@ -111,7 +111,7 @@ class CalibrateScene {
   }
 
   exit() {
-    if (!this.music) Clock.reset(CONFIG.BPM); // the intro carries on into the comic
+    if (!this.music) Clock.reset(CONFIG.BPM); // the intro carries on until the game's downbeat
   }
 
   update() {

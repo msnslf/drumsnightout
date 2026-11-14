@@ -7,19 +7,20 @@ const makeText = (text, size, weight = "bold", extra = {}) =>
   new PIXI.Text({ text, style: { fontFamily: CONFIG.FONT, fontSize: size, fontWeight: weight, fill: CONFIG.INK, ...extra } });
 
 class Menu {
-  // items: { label, onSelect } or 0..1 sliders { label, get, set, step? }
-  constructor(items, { x = CONFIG.WIDTH / 2, y = 290, gap = 75, size = 40 } = {}) {
+  // items: { label, onSelect } or 0..1 sliders { label, get, set, step? }; color: text and cursor
+  constructor(items, { x = CONFIG.WIDTH / 2, y = 290, gap = 75, size = 40, color = CONFIG.INK } = {}) {
     this.items = items;
+    this.color = color;
     this.choice = 0;
     this.view = new PIXI.Container();
     this.rows = items.map((item, i) => this._row(item, i, x, y + i * gap, gap, size));
-    this.cursor = this.view.addChild(new PIXI.Graphics().poly([0, -16, 26, 0, 0, 16]).fill(CONFIG.INK));
+    this.cursor = this.view.addChild(new PIXI.Graphics().poly([0, -16, 26, 0, 0, 16]).fill(color));
   }
 
   _row(item, i, x, y, gap, size) {
     const row = this.view.addChild(new PIXI.Container());
     row.position.set(x, y);
-    row.text = row.addChild(makeText("", size));
+    row.text = row.addChild(makeText("", size, "bold", { fill: this.color }));
     row.text.anchor.set(item.get ? 1 : 0.5, 0.5);
     row.eventMode = "static";
     row.cursor = "pointer";

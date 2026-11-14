@@ -14,6 +14,8 @@ function partyTime(beat) {
   return `${h % 12 || 12}:${String(total % 60).padStart(2, "0")}${h < 12 ? "am" : "pm"}`;
 }
 
+const MARQUEE_ART_H = 836; // height of the art in marquee_sign.png (below it is transparent)
+
 class GameScene {
   constructor() {
     this.view = new PIXI.Container();
@@ -41,16 +43,16 @@ class GameScene {
     });
     this.pause.button.position.set(CONFIG.WIDTH - 20 - this.pause.button.width, 14);
 
-    this.title = makeText("", 30);
-    this.title.anchor.set(0.5, 0);
-    this.title.position.set(CONFIG.WIDTH / 2, 12);
+    this.marquee = new PIXI.Sprite(); // texture set by useMarquee
+    this.marquee.anchor.set(0.5, 0);
+    this.marquee.position.set(CONFIG.WIDTH / 2, 0);
 
     this.countIn = makeText("", 140, "900");
     this.countIn.anchor.set(0.5);
     this.countIn.position.set(CONFIG.WIDTH / 2, Layout.countY);
 
     this.gameOver = new GameOverPanel();
-    this.overlay.addChild(this.info, this.title, this.countIn, this.bowling.banner, this.bowling.countView, this.pause.view);
+    this.overlay.addChild(this.info, this.marquee, this.countIn, this.bowling.banner, this.bowling.countView, this.pause.view);
     this.view.addChild(this.bowling.view, this.staff.gfx, this.dance.view, this.drumLayer, this.hud, this.overlay, this.gameOver.view, this.pause.button);
   }
 
@@ -64,7 +66,8 @@ class GameScene {
     Mixer.unfade();
     for (const v of this._fading()) v.alpha = 1;
     this.gameOver.hide();
-    for (const d of this.drums) d.reset();
+    for (const d of this.drums) d.reset(), (d.missesPerSquish = this.difficulty.missesPerSquish);
+    Mixer.setDuck("nodrums", MIX.nodrums.duck);
     this.dance.reset(this.difficulty.windowMs);
     this.bowling.reset();
     this.pause.show(false);
@@ -81,6 +84,7 @@ class GameScene {
   exit() {
     Clock.reset(this.bpm);
     Mixer.unfade();
+    Mixer.setDuck("nodrums", MIX.nodrums.duck);
     this.pause.show(false);
   }
 
@@ -89,6 +93,7 @@ class GameScene {
   _onPhase(phase) {
     if (phase.name === "dance") {
       this.dance.startSegment(phase.cycle);
+      Mixer.setDuck("nodrums", MIX.nodrums.duck + phase.cycle * CONFIG.DUCK_DB_PER_ROUND);
     } else if (phase.name === "toBowl") {
       this.bowling.prepare(phase.cycle);
       this._scheduleBowlCheck(phase.cycle, Song.phaseStart(phase.cycle, "bowl") + Song.phaseBeats("bowl"));
@@ -128,6 +133,12 @@ class GameScene {
     const start = Math.max(landBeat, this.ramps.at(-1)?.rampEnd ?? -Infinity);
     this.ramps.push(tempoRamp(start, this.bpm, this.bpm + CONFIG.SQUISH_TEMPO_BPM, 0));
     this.bpm += CONFIG.SQUISH_TEMPO_BPM;
+  }
+
+  // Marquee sign at the top centre; its art ends where the dance lanes begin.
+  useMarquee(texture) {
+    this.marquee.texture = texture;
+    this.marquee.scale.set(Layout.danceTop.y / MARQUEE_ART_H);
   }
 
   // ---------- frame ----------
@@ -212,14 +223,12 @@ class GameScene {
     if (a > 0) {
       for (const d of this.drums) {
         const x = Layout.drumX(d.index) - w / 2, y = Layout.drums.floorY + 22 - h / 2;
-        const left = 1 - d.misses / CONFIG.MISSES_PER_SQUISH;
+        const left = 1 - d.misses / d.missesPerSquish;
         if (left > 0) g.rect(x, y, w * left, h).fill({ color: CONFIG.INK, alpha: a });
         g.rect(x, y, w, h).stroke({ width: 2, color: CONFIG.INK, alpha: a });
       }
     }
 
-    this.title.text = st.title < 0.5 ? "club neutral clef" : "neutral clef lanes";
-    this.title.alpha = Math.abs(1 - 2 * st.title); // fades out, swaps, fades in
     const ramp = this.ramps.find((r) => beat < r.rampEnd);
     const bpm = ramp ? rampBpm(ramp, beat) : this.bpm;
     this.info.text = `${partyTime(beat)}   ${bpm.toFixed(1)} BPM`;

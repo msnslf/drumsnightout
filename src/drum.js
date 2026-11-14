@@ -81,7 +81,7 @@ class Drum {
   miss(beat) {
     this.misses++;
 
-    if (this.misses >= CONFIG.MISSES_PER_SQUISH) {
+    if (this.misses >= this.missesPerSquish) {
       this.misses = 0;
 
       this.stick.strike(beat, () => {

@@ -20,7 +20,7 @@ A map of where things live. For running the game and the keys, see `README.md`.
 - **Everything visible is drawn from `(beat, phase, layout state)` every frame.** Nothing musical has its own timer.
 - **MidiMusic** plays your MIDI clips half a bar at a time, following the phase; **Music** plays SFX; **Mixer** routes it all.
 
-Scenes: `title` → PLAY → `calibrate` (first PLAY of a visit only, with SKIP; `Settings.calibrated`) → `comic` → `game` (game over and REPLAY happen inside it). SETTINGS is a panel in the title and in the pause menu (`PauseMenu`, shared by comic and game). `calibrate` is also reached from settings → difficulty (from the pause menu this ends the game) and returns to the title's difficulty page. On the first PLAY it taps along to the intro music (left playing; taps start on its next downbeat, `base`) instead of the metronome, and the intro carries on into the comic. It opens with an instructions overlay (OK starts; RECALIBRATE skips it via `ready`) and ends on CONTINUE / RECALIBRATE; `enter({ then })` sets where CONTINUE, SKIP or Esc go. Esc / QUIT go back to the title.
+Scenes: `title` → PLAY → `calibrate` (first PLAY of a visit only, with SKIP; `Settings.calibrated`) → `game` (game over and REPLAY happen inside it). SETTINGS is a panel in the title and in the pause menu (`PauseMenu`). `calibrate` is also reached from settings → difficulty (from the pause menu this ends the game) and returns to the title's difficulty page. On the first PLAY it taps along to the intro music (left playing; taps start on its next downbeat, `base`) instead of the metronome, and the intro carries on until the game starts on its next downbeat. It opens with an instructions overlay (OK starts; RECALIBRATE skips it via `ready`) and ends on CONTINUE / RECALIBRATE; `enter({ then })` sets where CONTINUE, SKIP or Esc go. Esc / QUIT go back to the title.
 
 ## 2. Loading
 
@@ -58,20 +58,20 @@ Rules:
 
 | File | What's there |
 |---|---|
-| `config.js` | Every tunable number (`CONFIG`), the MIDI clip list (`MUSIC`) and the comic text (`COMIC_PAGES`). |
+| `config.js` | Every tunable number (`CONFIG`) and the MIDI clip list (`MUSIC`). |
 | `clock.js` | The music clock (section 3). Creates its own `AudioContext`, so all Tone nodes come after `Clock.init()`. `nextStart(holder, time)` keeps a synth's start times increasing. |
 | `song.js` | `Song.phaseAt(beat)` → `{name, cycle, startBeat, endBeat, progress}`; `phaseStart`, `phaseBeats`; `extendBowl` (the bowling loop); `clamp01`, `ease`, `lerp`. |
-| `mixer.js` | `MIX` levels (dB) and the routing: instrument channels → `drums` / `nodrums` → `all` (compressed, ducked by `sfx`) → music volume → lowpass/fade → master → 150 Hz low cut → limiter. Reverb and delay→distortion sends on every channel. `Mixer.in[name]` is what sounds connect to; `setVolume` (player sliders), `setSendCC` (CC send scaling), `lowpassSweep`/`fadeOut`/`unfade` (game over). |
+| `mixer.js` | `MIX` levels (dB) and the routing: instrument channels → `drums` / `nodrums` → `all` (compressed, ducked by `sfx`) → music volume → lowpass/fade → master → 150 Hz low cut → limiter. Reverb and delay→distortion sends on every channel. `Mixer.in[name]` is what sounds connect to; `setVolume` (player sliders), `setSendCC` (CC send scaling), `setDuck` (the dance sidechain, `nodrums`, deepens by `DUCK_DB_PER_ROUND` each round), `lowpassSweep`/`fadeOut`/`unfade` (game over). |
 | `music.js` | SFX and the calibration metronome. Bowling cues (`cue(name, time, voice)`) are placeholder synths named after their future samples; voice lines (`vo_strike`, `vo_multistrike`) load numbered takes from `assets/sfx/`. |
 | `midi-music.js` | Loads `MUSIC` clips (`load`), picks instruments, plays them each half bar (`_bar`), `barNotes` (also the dance chart's source), `playLane` (the player's hits, on their own kit), `playIntro`. |
 | `instruments.js` | The five instruments (`INSTRUMENTS`), CC handling (`cutoffCC`, `sendCC`, `CC_DEFAULTS`), the drum/perc kits (`DRUM_MAP`, `PERC_MAP`). |
 | `drum.js` | `Drum`: sprite poses, squish level, bounce, spin, misses → `DrumStick` strike. |
-| `game/layout.js` | `Layout.state(phase)` (transition choreography: `spread`, `clef`, `bowlUI`, `title`), all geometry (lanes, hit line, pin spots, clef path, `circleAt` for taps), `StaffView` drawing. |
+| `game/layout.js` | `Layout.state(phase)` (transition choreography: `spread`, `clef` (the invisible pin machine's route; pins drop as it passes), `bowlUI`), all geometry (lanes, hit line, pin spots, clef path, `circleAt` for taps), `StaffView` drawing. |
 | `game/dance.js` | Charts from the dance drums clip (`generateChart`), letters (`makeLetter`, `placeLetter`), judging, holds (`markHoldStarts`, `_insideRun`), misses. |
 | `game/bowling.js` | Aim, throw, ball path with bumpers, precomputed pin physics (`_roll`), strikes, pin count, tempo ramps (`tempoRamp`, `cancelTempoRamps`). `throw` returns the new tempo and its ramp. |
 | `scenes/game.js` | `GameScene`, the conductor: phase changes, the bowling loop (`_scheduleBowlCheck`), throws, squish tempo, `ramps` (every tempo ramp, for the BPM readout), HUD (party clock, BPM, miss bars, count-off), game over. |
 | `scenes/menu.js`, `settings.js`, `pause.js` | `makeText` (text in the game's font), `makeButton` (PAUSE, SKIP, BACK), `Menu` (option/slider list), `Settings` (incl. the calibration offset; `touch`, set at load from `(pointer: coarse)`; kept until the page reloads; key binding), `SettingsPanel`, `AudioPreview`, `PauseMenu`. |
-| `scenes/title.js`, `comic.js`, `calibrate.js`, `gameover.js` | The other screens. |
+| `scenes/title.js`, `calibrate.js`, `gameover.js` | The other screens. |
 | `input.js` | One `keydown` listener: unlocks audio, `[` / `]` nudge calibration, then `Scenes.current.onKey(e, Clock.beatOfEvent(e))`. With `Settings.touch`: `onTap(e, stagePoint, beat)` on pointerdown, `onTapUp(e)` on pointerup/cancel, `onHide()` when the tab is hidden. |
 | `main.js` | Boot order, `Scenes.go`, spritesheet loading, the ticker. |
 
@@ -81,8 +81,7 @@ Every scene has `view`, `enter(data)`, `exit()`, `update()`, `onKey(e, beat)` an
 
 - **Tuning** (difficulty windows, speeds, ball size, squish rules, tempo steps): `config.js`, plus the constants at the top of `bowling.js` and `layout.js`.
 - **Drum art:** one atlas, `assets/drums/drum.json` (animations `pose1`, `pose2`, `pose3`, 4 frames each; `meta.scale` sets the resolution), shared by `drum0.png` … `drum3.png`, one per game drum. Loaded in `main.js`. The pose loops once per beat (every 2 beats in `bowl`); each hit moves to the next pose. Anchor and scale: `Drum.useSpritesheet`, `Layout.drums.scale`.
-- **Pin art:** `assets/pins/pin.json` with `standing` (1 frame) and `fallen` (4 frames); placeholders otherwise.
-- **Comic:** text in `COMIC_PAGES`; drawn pages go in `ComicScene._buildPage` (keep `page.content` and `page.shadow`).
+- **Pin art:** `assets/environment/bowlingpin.json` (`bowlingpin.png`, 4 frames of 384×384, `meta.scale` 3) with `standing` (frame 1) and `fallen` (frames 2–4, cycled as a knocked pin rolls); placeholders if it fails to load.
 - **Song form:** bar counts in `CONFIG.PHASES` (multiples of 0.5). The names `dance`, `toBowl`, `bowl`, `toDance` are used in `Layout.state`, `GameScene`, `DanceMode._activeCycles`, `BowlingMode.update` and as `MUSIC` sections; search before renaming.
 - **Charts:** edit the dance drums clip, or replace `generateChart` (returns `[{beat, lane, state: "pending"}]` on absolute beats).
 - **Choreography:** the numbers in `Layout.state`; line ends in `lineTop`/`lineBottom`.
@@ -94,7 +93,7 @@ Every scene has `view`, `enter(data)`, `exit()`, `update()`, `onKey(e, beat)` an
 
 ## 6. Music from your DAW
 
-The music is cut into sections matching the game: **intro** (title, settings, comic), **countoff**, **dance**, **toBowl**, **bowl**, **toDance**. Every half bar the game plays the next half bar of the current section's clips at the game's tempo, so the music follows the bowling loop and every tempo change.
+The music is cut into sections matching the game: **intro** (title, settings, first calibration), **countoff**, **dance**, **toBowl**, **bowl**, **toDance**. Every half bar the game plays the next half bar of the current section's clips at the game's tempo, so the music follows the bowling loop and every tempo change.
 
 ### Exporting
 1. Compose in 4/4. The file's tempo is ignored; only note positions (ticks) matter.

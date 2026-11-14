@@ -23,11 +23,11 @@ const CONFIG = {
   // ms added to every key press; set by calibration or nudged with [ and ]
   INPUT_OFFSET_MS: 0,
 
-  // --- Difficulty: timing window either side of the note (ms) ---
+  // --- Difficulty: timing window either side of the note (ms), misses per stick hit ---
   DIFFICULTIES: [
-    { name: "EASY", windowMs: 130 },
-    { name: "NORMAL", windowMs: 90 },
-    { name: "HARD", windowMs: 55 },
+    { name: "EASY", windowMs: 130, missesPerSquish: 4 },
+    { name: "NORMAL", windowMs: 90, missesPerSquish: 3 },
+    { name: "HARD", windowMs: 55, missesPerSquish: 3 },
   ],
 
   // --- Dancing ---
@@ -41,12 +41,13 @@ const CONFIG = {
   // Judgement words, one picked at random each time.
   JUDGE_WORDS: {
     miss: ["miss", "oof", "nope", "dang", "geez", "ahh", "ooh", "soup", "zzz", "...", "wut", "why", "za", ":(", "x_x", "sith", "%$&*", "fi", "sus", "rabbit", "dog", "tree", "over it", "hazy", "purple", "salt on the wound", "whee", "qwerty", "quarrelsome", "lofi", "compostable", "matte", "ah chips", "need ice cream", "quagmire", "rocked", "trippy", "bracing", "avatar", "jam", "squid", "needs to thaw", "a long walk uphill", "sun is still shining", "dubious", "cloudy", "murky", "ill", "go to sleep"],
-    good: ["good", "cool", "ok", "neat", "nice", "fine", "food", "crust", "bread", "done", "did it", "did that", "fly", "car", "truck", "boop", "flower", ":)", "interesting", "good enough", "sutible", "potato", "lucky", "egg", "candy", "hyper pop", "so 90's", "millenial", "futuristic", "1080p", "recyclable", "metallic", "grunge", "vinegar", "apple orchard", "happy", "industrial", "rocknroll", "root beer", "happy holidays", "Q3 earnings", "viable", "value", "valiant", "rest easy", "boot", "cat", "organic", "illustrious", "elaborate", "expressive"],
-    perfect: ["wow", "perfect", "great", "dope", "nails", "lit", "tight", "drums", "pro", "coffee", "encore", "boom", "roasted", "4K", "elemental", "<3", "$$$$$", "slick", "sick as", "subtle", "sublime", "super", "upgrade-worhty", "powerful", "fancy", "fortunate", "quintessential", "renewable", "solar", "galactic", "shiny", "grapeseed oil", "true north", "omniscient", "adorbs", "v tight", "surfs up", "virtue", "driving", "supercalifragilistic", "existential", "decadent", "clutch" 
+    good: ["good", "cool", "ok", "neat", "nice", "fine", "food", "crust", "bread", "done", "did it", "did that", "fly", "car", "truck", "boop", "flower", ":)", "interesting", "good enough", "sutible", "potato", "lucky", "egg", "candy", "hyper pop", "so 90's", "millenial", "futuristic", "1080p", "recyclable", "metallic", "grunge", "vinegar", "apple orchard", "happy", "industrial", "rocknroll", "root beer", "happy holidays", "Q3 earnings", "viable", "value", "valiant", "rest easy", "boot", "cat", "organic", "illustrious", "elaborate", "expressive", "grass", "green", "proven"
+    ],
+    perfect: ["wow", "perfect", "great", "dope", "nails", "lit", "tight", "drums", "pro", "coffee", "encore", "boom", "roasted", "4K", "elemental", "<3", "$$$$$", "slick", "sick as", "subtle", "sublime", "super", "upgrade-worhty", "powerful", "fancy", "fortunate", "quintessential", "renewable", "solar", "galactic", "shiny", "grapeseed oil", "true north", "omniscient", "adorbs", "v tight", "surfs up", "virtue", "driving", "supercalifragilistic", "existential", "decadent", "clutch", "work'n it", "wowzers", "woo", "oh yeah" 
     ],
   },
-  MISSES_PER_SQUISH: 3,
   SQUISHES_TO_PANCAKE: 3, // TBD
+  DUCK_DB_PER_ROUND: 1, // dance sidechain gets this much deeper each round (from MIX.nodrums.duck)
   SQUISH_TEMPO_LEVEL: 2, SQUISH_TEMPO_BPM: 5, // a stick hit reaching this squish level adds this much tempo
 
   // --- Bowling ---
@@ -54,11 +55,9 @@ const CONFIG = {
   BOWL_HINT_WORDS_TOUCH: ["bowl", "with", "a", "tap"],
   AIM_PERIOD_BEATS: 4, // one full back-and-forth of the aim arrow
   AIM_MAX_ANGLE: 0.6, // radians
-  AIM_DIVERGENCE_PER_ROUND: 0.13, // radians of phase offset added between lanes each round
+  AIM_DIVERGENCE_PER_ROUND: 0.18, // radians of phase offset added between lanes each round
   ROLL_BEATS: 2, // ball always takes exactly this long to reach the end of the lane
-  BALL_START_FRAC: 0.35, // ball radius as a fraction of lane height (round 0: nearly too big)
-  BALL_SHRINK_PER_ROUND: 0.1,
-  BALL_MIN_FRAC: 0.1,
+  BALL_SIZES: [0.35, 0.25, 0.15, 0.05, 0.01, 0.005, 0.001], // ball radius per round, as a fraction of lane width; the last repeats
   BPM_PER_STANDING_PIN: 0.4, 
 
   // --- Look ---
@@ -71,7 +70,7 @@ const CONFIG = {
 const MUSIC = {
   folder: "assets/music/",
   clips: {
-    intro: ["intro-drums.mid", "intro-perc.mid", "intro-bass.mid", "intro-chords.mid", "intro-melody.mid"], // the comic book pages 
+    intro: ["intro-drums.mid", "intro-perc.mid", "intro-bass.mid", "intro-chords.mid", "intro-melody.mid"], // title screen and calibration
    
     countoff: "countoff.mid", // the count-off bars before the first dance
     dance: ["dance-bass.mid", "dance-chords.mid", "dance-drums.mid", "dance-melody.mid", "dance-perc.mid"],
@@ -81,19 +80,3 @@ const MUSIC = {
   },
 };
 CONFIG.MUSIC = MUSIC;
-
-// Comic pages: one string per panel, panels side by side.
-const COMIC_PAGES = [
-  ["Finally, just us four drums are getting a NIGHT OUT!"],
-  ["Yep, and you already know what we're getting into....", "DANCING + BOWLING!"],
-  [
-    "Hit the corresponding keys to keep our moves flowing",
-    "but watch out for the drum stick god so none of us become pancakes",
-    "hey, at least pancakes will be nice for breakfast in the morning",
-  ],
-  [
-    "And we'll hop over to the lanes to keep things fresh and bowl!",
-    "press any key to shoot",
-    "yeah love when we get those sweet MULTISTRIKES!",
-  ],
-];

@@ -1,7 +1,7 @@
 // Player settings (kept until the page reloads) and the menu pages for them.
 
 const Settings = {
-  difficulty: 1, // index into CONFIG.DIFFICULTIES
+  difficulty: 0, // index into CONFIG.DIFFICULTIES (0 = EASY)
   bpm: CONFIG.BPM, // starting tempo
   volume: { music: 1, sfx: 1 }, // slider positions 0..1, applied by Mixer.setVolume
   keys: [...CONFIG.LANE_KEYS], // dance key per lane, lowercase

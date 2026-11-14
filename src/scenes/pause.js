@@ -1,4 +1,4 @@
-// Pause overlay for the comic and game; pausing suspends the audio clock.
+// Pause overlay for the game; pausing suspends the audio clock.
 
 class PauseMenu {
   // onToggle(paused) runs after each toggle; canPause() can refuse a pause
