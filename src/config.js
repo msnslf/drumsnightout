@@ -29,6 +29,8 @@ const CONFIG = {
     { name: "NORMAL", windowMs: 90, missesPerSquish: 3 },
     { name: "HARD", windowMs: 55, missesPerSquish: 3 },
   ],
+  // From these dance rounds on, at most this many misses summon the stick; at 1 the miss bars go.
+  MISSES_FROM_ROUND: [{ round: 4, misses: 2 }, { round: 7, misses: 1 }],
 
   // --- Dancing ---
   // Default key per lane, left to right; players rebind them in settings.
@@ -41,13 +43,13 @@ const CONFIG = {
   // Judgement words, one picked at random each time.
   JUDGE_WORDS: {
     miss: ["miss", "oof", "nope", "dang", "geez", "ahh", "ooh", "soup", "zzz", "...", "wut", "why", "za", ":(", "x_x", "sith", "%$&*", "fi", "sus", "rabbit", "dog", "tree", "over it", "hazy", "purple", "salt on the wound", "whee", "qwerty", "quarrelsome", "lofi", "compostable", "matte", "ah chips", "need ice cream", "quagmire", "rocked", "trippy", "bracing", "avatar", "jam", "squid", "needs to thaw", "a long walk uphill", "sun is still shining", "dubious", "cloudy", "murky", "ill", "go to sleep"],
-    good: ["good", "cool", "ok", "neat", "nice", "fine", "food", "crust", "bread", "done", "did it", "did that", "fly", "car", "truck", "boop", "flower", ":)", "interesting", "good enough", "sutible", "potato", "lucky", "egg", "candy", "hyper pop", "so 90's", "millenial", "futuristic", "1080p", "recyclable", "metallic", "grunge", "vinegar", "apple orchard", "happy", "industrial", "rocknroll", "root beer", "happy holidays", "Q3 earnings", "viable", "value", "valiant", "rest easy", "boot", "cat", "organic", "illustrious", "elaborate", "expressive", "grass", "green", "proven"
+    good: ["good", "cool", "ok", "neat", "nice", "fine", "food", "crust", "bread", "done", "did it", "did that", "fly", "car", "truck", "boop", "flower", ":)", "interesting", "good enough", "sutible", "potato", "lucky", "egg", "candy", "hyper pop", "so 90's", "millenial", "futuristic", "1080p", "recyclable", "metallic", "grunge", "vinegar", "apple orchard", "happy", "industrial", "rocknroll", "root beer", "happy holidays", "Q3 earnings", "viable", "value", "valiant", "rest easy", "boot", "cat", "organic", "illustrious", "elaborate", "expressive", "grass", "green", "proven", "pants"
     ],
-    perfect: ["wow", "perfect", "great", "dope", "nails", "lit", "tight", "drums", "pro", "coffee", "encore", "boom", "roasted", "4K", "elemental", "<3", "$$$$$", "slick", "sick as", "subtle", "sublime", "super", "upgrade-worhty", "powerful", "fancy", "fortunate", "quintessential", "renewable", "solar", "galactic", "shiny", "grapeseed oil", "true north", "omniscient", "adorbs", "v tight", "surfs up", "virtue", "driving", "supercalifragilistic", "existential", "decadent", "clutch", "work'n it", "wowzers", "woo", "oh yeah" 
+    perfect: ["wow", "perfect", "great", "dope", "nails", "lit", "tight", "drums", "pro", "coffee", "encore", "boom", "roasted", "4K", "elemental", "<3", "$$$$$", "slick", "sick as", "subtle", "sublime", "super", "upgrade-worhty", "powerful", "fancy", "fortunate", "quintessential", "renewable", "solar", "galactic", "shiny", "grapeseed oil", "true north", "omniscient", "adorbs", "v tight", "surfs up", "virtue", "driving", "supercalifragilistic", "existential", "decadent", "clutch", "work'n it", "wowzers", "woo", "oh yeah", "pocket" 
     ],
   },
   SQUISHES_TO_PANCAKE: 3, // TBD
-  DUCK_DB_PER_ROUND: 1, // dance sidechain gets this much deeper each round (from MIX.nodrums.duck)
+  DUCK_DB_PER_ROUND: 2, // dance sidechain gets this much deeper each round (from MIX.nodrums.duck)
   SQUISH_TEMPO_LEVEL: 2, SQUISH_TEMPO_BPM: 5, // a stick hit reaching this squish level adds this much tempo
 
   // --- Bowling ---
@@ -58,11 +60,13 @@ const CONFIG = {
   AIM_DIVERGENCE_PER_ROUND: 0.18, // radians of phase offset added between lanes each round
   ROLL_BEATS: 2, // ball always takes exactly this long to reach the end of the lane
   BALL_SIZES: [0.35, 0.25, 0.15, 0.05, 0.01], // ball radius per round, as a fraction of lane width; the last repeats
-  BPM_PER_STANDING_PIN: 0.4, 
+  BPM_PER_STANDING_PIN: 0.4, // round 1; grows by BPM_PER_PIN_PER_ROUND each bowling round
+  BPM_PER_PIN_PER_ROUND: 0.1,
 
   // --- Look ---
   INK: 0x000000,
   PAPER: 0xffffff,
+  DANGER: 0xe02020, // hit circle of a drum one squish from pancake
   FONT: "'Tahoma', 'Chalkboard SE', 'Comic Neue', sans-serif",
 };
 

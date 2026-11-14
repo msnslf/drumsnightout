@@ -8,7 +8,7 @@ const PIN_STOP_BEATS = 1.5, PIN_DECAY = 4; // a knocked pin's speed decays (rate
 const PIN_FADE_BEATS = 2; // a stopped pin fades out over this long
 const COUNT_STEP = 1 / 6; // beats between pin-count numbers
 const COUNT_MOVE_BEATS = 2; // beats the total takes to slide under the tempo
-const BPM_STEP = 0.1, BPM_STEPS_PER_BEAT = 16;
+const BPM_STEP = 0.1, RAMP_BEATS = 2; // tempo ramps finish in 2 beats; default step 0.1 BPM
 const PIN_ANIMS = { standing: 1, fallen: 3 }; // spritesheet animation -> frame count
 
 // Speed (1 -> 0) and distance factors of a pin `t` beats after its hit.
@@ -29,26 +29,28 @@ function cancelTempoRamps() {
   tempoRampEpoch++;
 }
 
-// Steps the tempo bpm -> newBpm from rampStart, set on the curve `lead` early.
-function tempoRamp(rampStart, bpm, newBpm, lead) {
+// Steps the tempo bpm -> newBpm in `steps` equal steps (a click each) over RAMP_BEATS from rampStart.
+// The curve is set `lead` beats early.
+function tempoRamp(rampStart, bpm, newBpm, lead, steps = Math.ceil((newBpm - bpm) / BPM_STEP - 1e-6)) {
   const epoch = tempoRampEpoch;
-  const steps = Math.ceil((newBpm - bpm) / BPM_STEP - 1e-6);
-  const stepBeat = (k) => rampStart + k / BPM_STEPS_PER_BEAT;
+  const step = (newBpm - bpm) / steps;
+  const stepBeats = RAMP_BEATS / steps; // Infinity when there's nothing to ramp
+  const stepBeat = (k) => rampStart + k * stepBeats;
   const setAt = rampStart - lead;
   Clock.atBeat(setAt, (time) => {
     if (epoch !== tempoRampEpoch) return;
     for (let k = 0; k < steps; k++) {
-      Clock.transport.bpm.setValueAtTime(Math.min(newBpm, bpm + (k + 1) * BPM_STEP), Clock.timeAfter(time, stepBeat(k) - setAt));
+      Clock.transport.bpm.setValueAtTime(Math.min(newBpm, bpm + (k + 1) * step), Clock.timeAfter(time, stepBeat(k) - setAt));
     }
   });
   for (let k = 0; k < steps; k++) Clock.atBeat(stepBeat(k), (time) => epoch === tempoRampEpoch && Music.cue("sfx_bpmUpdate", time));
-  return { rampStart, rampEnd: stepBeat(steps), bpm, newBpm, steps };
+  return { rampStart, rampEnd: steps ? rampStart + RAMP_BEATS : rampStart, bpm, newBpm, steps, step, stepBeats };
 }
 
 // Tempo shown at `beat` during a tempoRamp.
 function rampBpm(r, beat) {
-  const k = beat < r.rampStart ? 0 : Math.min(r.steps, Math.floor((beat - r.rampStart) * BPM_STEPS_PER_BEAT) + 1);
-  return Math.min(r.newBpm, r.bpm + k * BPM_STEP);
+  const k = beat < r.rampStart ? 0 : Math.min(r.steps, Math.floor((beat - r.rampStart) / r.stepBeats) + 1);
+  return k ? Math.min(r.newBpm, r.bpm + k * r.step) : r.bpm;
 }
 
 // Next multiple of `step` after `from`, at or after `b` (after, if `strict`).
@@ -139,6 +141,11 @@ class BowlingMode {
     });
   }
 
+  // BPM added per standing pin this round (rounded so 0.4 + 0.2 shows as 0.6).
+  _bpmPerPin() {
+    return Math.round((CONFIG.BPM_PER_STANDING_PIN + this.round * CONFIG.BPM_PER_PIN_PER_ROUND) * 100) / 100;
+  }
+
   // Aim angle of a lane at a beat; lanes drift apart each round.
   aimAngle(i, beat) {
     const divergence = Math.min(Math.PI, this.round * CONFIG.AIM_DIVERGENCE_PER_ROUND);
@@ -192,7 +199,7 @@ class BowlingMode {
     const lastDone = this.lanes.at(-1).throwBeat + CONFIG.ROLL_BEATS;
 
     const standing = this.lanes.flatMap((L) => L.pins.filter((p) => p.knockBeat === Infinity));
-    const newBpm = bpm + standing.length * CONFIG.BPM_PER_STANDING_PIN;
+    const newBpm = bpm + standing.length * this._bpmPerPin();
     this.danceBeat = standing.length ? this._countAndRamp(standing, nextHalf(lastDone), nextHalf, bpm, newBpm) : nextBar(lastDone);
     return { bpm: newBpm, ramp: this.count }; // ramp: null if no pins stood
   }
@@ -241,7 +248,7 @@ class BowlingMode {
     });
     const moveStart = nextHalf(start + (n - 1) * COUNT_STEP, true), rampStart = moveStart + COUNT_MOVE_BEATS;
     // Set the ramp just before toDance's first bar, so that bar follows it.
-    const ramp = tempoRamp(rampStart, bpm, newBpm, 0.25);
+    const ramp = tempoRamp(rampStart, bpm, newBpm, 0.25, n); // one step per standing pin
 
     const text = (s, size) => this.countView.addChild(makeText(s, size));
     const labels = standing.map((p, k) => {
@@ -250,7 +257,7 @@ class BowlingMode {
       t.position.set(p.x, p.y);
       return t;
     });
-    const plus = text("+ ", 22), times = text(` x ${CONFIG.BPM_PER_STANDING_PIN}`, 22);
+    const plus = text("+ ", 22), times = text(` x ${this._bpmPerPin()}`, 22);
     plus.anchor.set(1, 0);
     times.anchor.set(1, 0);
     this.count = { labels, plus, times, home: { x: labels.at(-1).x, y: labels.at(-1).y }, start, moveStart, ...ramp };

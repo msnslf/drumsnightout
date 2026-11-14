@@ -114,7 +114,8 @@ class StaffView {
     this.gfx = new PIXI.Graphics();
   }
 
-  update(st) {
+  // danger: lanes whose hit circle is drawn in CONFIG.DANGER.
+  update(st, danger = []) {
     const g = this.gfx;
     const ink = CONFIG.INK;
     g.clear();
@@ -130,7 +131,7 @@ class StaffView {
       for (let i = 0; i < 4; i++) {
         const cx = Layout.drumX(i);
         g.rect(x, y - h, cx - R - x, 2 * h).fill({ color: ink, alpha });
-        g.circle(cx, y, R).stroke({ width: 2 * h, color: ink, alpha });
+        g.circle(cx, y, R).stroke({ width: 2 * h, color: danger.includes(i) ? CONFIG.DANGER : ink, alpha });
         x = cx + R;
       }
       g.rect(x, y - h, Layout.lineX(4) + 18 - x, 2 * h).fill({ color: ink, alpha });

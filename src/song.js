@@ -66,3 +66,5 @@ const Song = {
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
 const ease = (t) => ((t = clamp01(t)), t * t * (3 - 2 * t));
 const lerp = (a, b, t) => a + (b - a) * t;
+// Colour between 0xRRGGBB values a and b.
+const lerpColor = (a, b, t) => [16, 8, 0].reduce((c, s) => c | (Math.round(lerp((a >> s) & 255, (b >> s) & 255, t)) << s), 0);

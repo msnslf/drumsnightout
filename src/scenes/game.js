@@ -14,6 +14,7 @@ function partyTime(beat) {
   return `${h % 12 || 12}:${String(total % 60).padStart(2, "0")}${h < 12 ? "am" : "pm"}`;
 }
 
+const METER_REFILL_BEATS = 3; // miss bar refill (and fade from red) after the stick lands
 const MARQUEE_ART_H = 836; // height of the art in marquee_sign.png (below it is transparent)
 
 class GameScene {
@@ -93,6 +94,8 @@ class GameScene {
   _onPhase(phase) {
     if (phase.name === "dance") {
       this.dance.startSegment(phase.cycle);
+      const rule = CONFIG.MISSES_FROM_ROUND.findLast((r) => phase.cycle + 1 >= r.round);
+      for (const d of this.drums) d.missesPerSquish = Math.min(this.difficulty.missesPerSquish, rule?.misses ?? Infinity);
       Mixer.setDuck("nodrums", MIX.nodrums.duck + phase.cycle * CONFIG.DUCK_DB_PER_ROUND);
     } else if (phase.name === "toBowl") {
       this.bowling.prepare(phase.cycle);
@@ -155,7 +158,7 @@ class GameScene {
     }
     const st = Layout.state(phase);
 
-    this.staff.update(st);
+    this.staff.update(st, this.drums.filter((d) => d.squishLevel === CONFIG.SQUISHES_TO_PANCAKE - 1).map((d) => d.index));
     this.dance.update(beat, phase, st.spread);
     this.bowling.update(beat, phase, st);
 
@@ -219,13 +222,19 @@ class GameScene {
     const g = this.hud;
     g.clear();
     // Miss bar under each drum while dancing: full, emptying by one step per miss.
+    // Red with one miss left; empty and red until the stick lands, then refills and fades to black.
     const a = 1 - st.spread, w = 52, h = 12;
     if (a > 0) {
       for (const d of this.drums) {
+        if (d.missesPerSquish <= 1) continue; // one miss is a hit: no bar
         const x = Layout.drumX(d.index) - w / 2, y = Layout.drums.floorY + 22 - h / 2;
-        const left = 1 - d.misses / d.missesPerSquish;
-        if (left > 0) g.rect(x, y, w * left, h).fill({ color: CONFIG.INK, alpha: a });
-        g.rect(x, y, w, h).stroke({ width: 2, color: CONFIG.INK, alpha: a });
+        let left = 1 - d.misses / d.missesPerSquish, red = d.misses === d.missesPerSquish - 1 ? 1 : 0;
+        const since = beat - d.stick.landBeat;
+        if (since < 0) (left = 0), (red = 1);
+        else if (since < METER_REFILL_BEATS) (left = Math.min(left, since / METER_REFILL_BEATS)), (red = Math.max(red, 1 - since / METER_REFILL_BEATS));
+        const color = lerpColor(CONFIG.INK, CONFIG.DANGER, red);
+        if (left > 0) g.rect(x, y, w * left, h).fill({ color, alpha: a });
+        g.rect(x, y, w, h).stroke({ width: 2, color, alpha: a });
       }
     }
 

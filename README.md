@@ -17,7 +17,7 @@ To play on a phone, open `http://<your Mac's local IP>:8000` on the same Wi-Fi.
 - **Bowl:** any key freezes all four aims; the drums bowl one per half note. Standing pins raise the tempo.
 - **Touch screens** (detected at load): tap a hit circle to dance (hold a finger through a run), tap anywhere to bowl. Dots replace the key letters and CONTROLS is hidden.
 - **Pause:** P or PAUSE (RESUME / SETTINGS / QUIT). **Esc** goes back to the title.
-- **Calibrate:** the first PLAY starts with calibration (SKIP or S skips it); later, SETTINGS → DIFFICULTY → CALIBRATE (from the pause menu this ends the game). Tap along to 16 quarter notes, then CONTINUE or RECALIBRATE. `[` / `]` nudge the offset by 5 ms.
+- **Calibrate:** the first PLAY shows the instructions with START or CALIBRATE; later, SETTINGS → DIFFICULTY → CALIBRATE (from the pause menu this ends the game). Tap along to 16 quarter notes, then CONTINUE or RECALIBRATE. `[` / `]` nudge the offset by 5 ms.
 
 ## Changing things
 

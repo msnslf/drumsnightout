@@ -38,24 +38,27 @@ class CalibrateScene {
       { label: "RECALIBRATE", onSelect: () => Scenes.go("calibrate", { then: this.then, ready: true }) },
     ], { y: 400 });
 
-    // Instructions overlay (pause menu style); OK starts the calibration.
+    // Instructions overlay (pause menu style). From settings: OK calibrates. First PLAY: START or CALIBRATE.
     this.info = new PIXI.Container();
     this.info.eventMode = "static"; // swallows clicks
     this.info.hitArea = new PIXI.Rectangle(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
     this.info.on("pointertap", (e) => e.stopPropagation());
     this.info.addChild(new PIXI.Graphics().rect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT).fill({ color: CONFIG.PAPER, alpha: 0.85 }));
-    const heading = this.info.addChild(makeText("CALIBRATION", 96, "900"));
-    heading.anchor.set(0.5);
-    heading.position.set(CONFIG.WIDTH / 2, 170);
+    this.heading = this.info.addChild(makeText("CALIBRATION", 96, "900"));
+    this.heading.anchor.set(0.5);
+    this.heading.position.set(CONFIG.WIDTH / 2, 170);
     this.howTo = this.info.addChild(makeText("", 32, "bold", { align: "center", wordWrap: true, wordWrapWidth: 1000 }));
     this.howTo.anchor.set(0.5);
     this.howTo.position.set(CONFIG.WIDTH / 2, 340);
     this.ok = new Menu([{ label: "OK", onSelect: () => this._start() }], { y: 520 });
-    this.info.addChild(this.ok.view);
+    this.choose = new Menu([
+      { label: "START", onSelect: () => this._done() },
+      { label: "CALIBRATE", onSelect: () => this._start() },
+    ], { y: 450 });
+    this.info.addChild(this.ok.view, this.choose.view);
     this.back = makeButton("BACK", () => this._done());
-    this.skip = makeButton("SKIP ▶▶", () => this._done(), true); // underlined S: the skip key
-    for (const b of [this.back, this.skip]) b.position.set(CONFIG.WIDTH - 20 - b.width, 14);
-    this.view.addChild(this.title, this.hint, this.big, this.progress, this.result, this.detail, this.menu.view, this.info, this.back, this.skip);
+    this.back.position.set(CONFIG.WIDTH - 20 - this.back.width, 14);
+    this.view.addChild(this.title, this.hint, this.big, this.progress, this.result, this.detail, this.menu.view, this.info, this.back);
   }
 
   // then: scene to go to when done (first PLAY: "game"); else the title's difficulty page.
@@ -64,7 +67,10 @@ class CalibrateScene {
     Settings.calibrated = true;
     this.then = then;
     this.back.visible = !then;
-    this.skip.visible = !!then;
+    this.heading.visible = this.ok.view.visible = !then;
+    this.choose.view.visible = !!then;
+    this.ok.choice = this.choose.choice = 0;
+    this.howTo.y = then ? 290 : 340;
     this.arrowLayer.removeChildren().forEach((c) => c.destroy());
     this.hint.text = Settings.touch
       ? "Tap on every beat, as each dot hits the line"
@@ -72,7 +78,7 @@ class CalibrateScene {
     this.howTo.text = (Settings.touch
       ? "tap on beat as the dots arrive."
       : `tap ${Settings.keys.join(" ").toUpperCase()} on beat as the letters arrive.`) +
-      "\n(bluetooth audio will be problematic with latency!)";
+      "\n\n(bluetooth audio will be problematic with latency!)";
     this.music = !!then && !!MidiMusic.clips.intro; // first PLAY: tap to the intro, not the metronome
     this.notes = [];
     this.deltas = [];
@@ -114,7 +120,7 @@ class CalibrateScene {
   }
 
   update() {
-    if (!this.started) return this.ok.update();
+    if (!this.started) return this._infoMenu().update();
     if (this.finished) return this.menu.update();
     const beat = Clock.beat();
     for (const n of this.notes) {
@@ -159,10 +165,14 @@ class CalibrateScene {
 
   onKey(e) {
     const key = e.key.toLowerCase();
-    if (e.key === "Escape" || (this.then && key === "s" && !Settings.keys.includes("s"))) return this._done();
-    if (!this.started) return this.ok.onKey(e);
+    if (e.key === "Escape") return this._done();
+    if (!this.started) return this._infoMenu().onKey(e);
     if (this.finished) return this.menu.onKey(e);
     if (Settings.keys.includes(key) || e.key === " ") this._tap(e);
+  }
+
+  _infoMenu() {
+    return this.then ? this.choose : this.ok;
   }
 
   // Touch: a tap anywhere counts (menu and buttons are Pixi's).
