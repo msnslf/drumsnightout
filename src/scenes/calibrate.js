@@ -66,10 +66,9 @@ class CalibrateScene {
     this.back.visible = !then;
     this.skip.visible = !!then;
     this.arrowLayer.removeChildren().forEach((c) => c.destroy());
-    const leave = then ? "S or Esc to skip" : "Esc to cancel";
     this.hint.text = Settings.touch
-      ? `Tap on every beat, as each dot hits the line   •   ${then ? "SKIP to skip" : "BACK to cancel"}`
-      : `Tap any of ${Settings.keys.join(" ").toUpperCase()} on every beat, as each letter hits the line   •   ${leave}`;
+      ? "Tap on every beat, as each dot hits the line"
+      : `Tap any of ${Settings.keys.join(" ").toUpperCase()} on every beat, as each letter hits the line`;
     this.howTo.text = (Settings.touch
       ? "tap on beat as the dots arrive."
       : `tap ${Settings.keys.join(" ").toUpperCase()} on beat as the letters arrive.`) +
