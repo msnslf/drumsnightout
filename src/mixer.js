@@ -120,6 +120,7 @@ const Mixer = {
     const amount = (this.ducks[name] = new Tone.Multiply(Tone.dbToGain(MIX[name].duck)));
     const dip = new Tone.WaveShaper((x) => 1 - Math.min(Math.max(x, 0), 1));
     source.chain(new Tone.Follower(0.1), amount, dip);
+    new Tone.Signal(0).connect(dip); // keeps the shaper's input active: with none it outputs silence, not 1
     dip.connect(gain.gain); // a signal connected to a param replaces its value
     this.in[name] = gain;
   },
