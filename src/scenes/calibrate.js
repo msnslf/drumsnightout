@@ -74,7 +74,7 @@ class CalibrateScene {
     this.arrowLayer.removeChildren().forEach((c) => c.destroy());
     this.hint.text = Settings.touch
       ? "Tap on every beat, as each dot hits the line"
-      : `Tap any of ${Settings.keys.join(" ").toUpperCase()} on every beat, as each letter hits the line`;
+      : `Tap any of ${Settings.keys.join(" ").toUpperCase()} on every beat, as each letter hits the circle`;
     this.howTo.text = (Settings.touch
       ? "tap on beat as the dots arrive."
       : `tap ${Settings.keys.join(" ").toUpperCase()} on beat as the letters arrive.`) +
